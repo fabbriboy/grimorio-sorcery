@@ -43,6 +43,7 @@ h1{font-family:var(--f-display);font-weight:400;font-size:clamp(1.9rem,5vw,2.8re
 nav.tabs{display:flex;gap:2px;flex-wrap:wrap}
 nav.tabs button{font:inherit;font-family:var(--f-display);font-size:1.15rem;background:none;border:0;color:var(--muted);padding:4px 10px 6px;cursor:pointer;border-bottom:2px solid transparent}
 nav.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--gold)}
+nav.tabs .tablink{font-family:var(--f-display);font-size:1.15rem;color:var(--gold);padding:4px 10px 6px;text-decoration:none;margin-left:auto}
 .filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .chip{font:inherit;font-size:.9rem;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:3px 11px;cursor:pointer;display:inline-flex;gap:6px;align-items:center}
 .chip[aria-pressed="true"]{border-color:var(--ink);background:var(--ink);color:var(--bg)}
@@ -155,6 +156,7 @@ summary{cursor:pointer;color:var(--muted);font-size:.9rem}
     <button role="tab" data-view="mesa" aria-selected="false">Mesa</button>
     <button role="tab" data-view="regras" aria-selected="false">Regras</button>
     <button role="tab" data-view="glossario" aria-selected="false">Glossário</button>
+    <a class="tablink" href="jogar.html">Jogar</a>
   </nav>
   <div class="filters" id="filters">
     <select id="source" aria-label="Caixa ou coleção">

@@ -20,6 +20,16 @@ Acesse em https://fabbriboy.github.io/grimorio-sorcery/
 - Nomes editáveis e painéis de cima virados para quem senta do outro lado.
 - Tudo fica salvo no aparelho, inclusive se o app for fechado no meio da partida.
 
+## Mesa Virtual
+
+- Uma mesa 2D para jogar no mesmo aparelho, no PC ou no celular, com as cartas dos 8 decks prontos.
+- Cada jogador tem Atlas, Grimório, mão, cemitério e cartas banidas; dá para comprar, olhar as cartas de cima, procurar no monte e embaralhar.
+- As cartas são movidas arrastando ou tocando; dá para virar, marcar dano, deixar de face para baixo e mandar para a mão, cemitério ou baralho.
+- Fichas de Soldado, Esqueleto, Sapo, Lança e Escombros.
+- Vida e limiar de cada jogador, botão de desfazer e partida salva no aparelho.
+- Ao passar a vez, a mão fica escondida até o próximo jogador tocar para ver.
+- A mesa não aplica regras nem calcula dano: os jogadores fazem as contas, como numa mesa de verdade.
+
 ## Regras e glossário
 
 - Resumo das regras em português: turno, mana e limiar, combate, camadas, artefatos, fichas, Proteção, Maligno, coleção e montagem de deck.

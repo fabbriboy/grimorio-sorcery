@@ -1,0 +1,662 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Mesa Virtual Sorcery</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="theme-color" content="#15181a">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=Alegreya+Sans:wght@400;500;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: one screen. Opponent strip, the 5x4 realm, your strip, then your hand. Selecting any card opens an action bar. */
+:root{
+  --bg:#e9ebe6; --surface:#f7f8f4; --ink:#1d2120; --muted:#5f6763; --line:#cfd4cd; --gold:#8a6a1f; --danger:#a3322a;
+  --felt:#d9ddd3; --felt-line:#b9bfb4; --backrow:rgba(138,106,31,.08);
+  --air:#6e86a8; --earth:#6f7232; --fire:#b4482a; --water:#23707f;
+  --p0:#b4482a; --p1:#23707f;
+  --f-display:"IM Fell English SC","Iowan Old Style","Palatino Linotype",Georgia,serif;
+  --f-body:"Alegreya Sans","Gill Sans","Segoe UI",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#15181a; --surface:#1e2225; --ink:#e6e8e2; --muted:#9aa29d; --line:#30363a; --gold:#d3ad55; --danger:#e0675c;
+  --felt:#1f2a26; --felt-line:#33423c; --backrow:rgba(211,173,85,.07);
+  --air:#93abcc; --earth:#a9ad5e; --fire:#e2774f; --water:#4fb0c0; --p0:#e2774f; --p1:#4fb0c0; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#15181a; --surface:#1e2225; --ink:#e6e8e2; --muted:#9aa29d; --line:#30363a; --gold:#d3ad55; --danger:#e0675c;
+  --felt:#1f2a26; --felt-line:#33423c; --backrow:rgba(211,173,85,.07);
+  --air:#93abcc; --earth:#a9ad5e; --fire:#e2774f; --water:#4fb0c0; --p0:#e2774f; --p1:#4fb0c0; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.35;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.wrap{max-width:1100px;margin:0 auto;padding-left:max(10px,env(safe-area-inset-left,0px));padding-right:max(10px,env(safe-area-inset-right,0px))}
+.btn{background:var(--ink);color:var(--bg);border:0;border-radius:8px;padding:7px 12px}
+.btn.ghost{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+.btn.small{padding:4px 9px;font-size:.88rem}
+/* setup */
+#setup{padding-block:28px 40px}
+#setup h1{font-family:var(--f-display);font-weight:400;font-size:clamp(1.9rem,6vw,2.8rem);margin:0 0 .3rem;line-height:1}
+#setup .sub{color:var(--muted);margin:0 0 1.4rem;max-width:58ch}
+.seats{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-bottom:14px}
+.seat{background:var(--surface);border:1px solid var(--line);border-top:5px solid var(--pc);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.seat label{font-size:.8rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.seat input,.seat select,#first{font:inherit;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);width:100%}
+.setup-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.setup-row label{color:var(--muted)}
+#first{width:auto}
+.note{color:var(--muted);font-size:.9rem;max-width:62ch}
+/* game */
+#game{display:flex;flex-direction:column}
+.topbar{display:flex;align-items:center;gap:6px;padding-block:6px;flex-wrap:wrap}
+.topbar .turn{font-family:var(--f-display);font-size:1.1rem;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar a{color:var(--muted);text-decoration:none;font-size:.9rem}
+.strip{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--pc);border-radius:10px;padding:6px 8px;margin-block:4px}
+.strip.active{box-shadow:0 0 0 2px var(--pc)}
+.pname{font-family:var(--f-display);font-size:1.05rem;max-width:9em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.life{display:flex;align-items:center;gap:3px}
+.life .v{font-family:var(--f-mono);font-weight:600;font-size:1.35rem;min-width:2ch;text-align:center;font-variant-numeric:tabular-nums}
+.life.door .v{color:var(--danger)}
+.st{width:28px;height:28px;border-radius:8px;border:1px solid var(--line);background:var(--bg);padding:0;touch-action:manipulation}
+.els{display:flex;gap:4px}
+.el{display:flex;align-items:center;border-radius:8px;background:color-mix(in srgb,var(--c) 14%,transparent);border:1px solid color-mix(in srgb,var(--c) 45%,transparent)}
+.el b{font-size:.72rem;color:var(--c);padding-left:5px}
+.el span{font-family:var(--f-mono);min-width:1.3em;text-align:center;font-size:.92rem}
+.el button{border:0;background:none;width:22px;height:26px;padding:0;touch-action:manipulation}
+.piles{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap}
+.pile{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:3px 8px;font-size:.85rem;display:flex;gap:5px;align-items:center}
+.pile .n{font-family:var(--f-mono);font-weight:600}
+/* board */
+.boardwrap{flex:none;width:100%;display:flex;align-items:center;justify-content:center;padding-block:4px}
+#board{position:relative;flex:none;aspect-ratio:894/583;width:100%;max-width:100%;background:var(--felt) center/cover no-repeat;border:1px solid var(--felt-line);border-radius:10px;touch-action:none;user-select:none;-webkit-user-select:none;overflow:hidden}
+#board .gridov{position:absolute;pointer-events:none;border:1px solid rgba(255,255,255,.35);
+  background-image:linear-gradient(to right,rgba(255,255,255,.35) 1px,transparent 1px),linear-gradient(to bottom,rgba(255,255,255,.35) 1px,transparent 1px);background-size:20% 100%,100% 25%}
+#board.mat-1 .gridov{border:0;background:none}
+#board .cellhi{position:absolute;pointer-events:none;border:2px solid var(--gold);border-radius:4px;background:color-mix(in srgb,var(--gold) 18%,transparent);transform:translate(-50%,-50%)}
+.zone{position:absolute;transform:translate(-50%,-50%);border-radius:6px;border:1.5px dashed rgba(255,255,255,.55);background:rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.zone.hit{border-color:var(--gold);border-style:solid;box-shadow:0 0 0 2px var(--gold)}
+.zone .back,.zone img{position:absolute;inset:2px;border-radius:4px;width:calc(100% - 4px);height:calc(100% - 4px);object-fit:cover}
+.zone .zl{position:absolute;bottom:-1px;left:50%;transform:translate(-50%,50%);background:rgba(0,0,0,.75);color:#fff;font-size:.62rem;border-radius:999px;padding:1px 6px;white-space:nowrap;z-index:2}
+.zone .zn{position:absolute;top:2px;right:2px;background:rgba(0,0,0,.7);color:#fff;font:600 .68rem var(--f-mono);border-radius:4px;padding:0 4px;z-index:2}
+.bc{position:absolute;transform:translate(-50%,-50%);border-radius:5px;box-shadow:0 1px 4px rgba(0,0,0,.35);touch-action:none;cursor:grab;outline:2px solid var(--pc);outline-offset:-1px;background:var(--surface)}
+.bc img{width:100%;height:100%;display:block;border-radius:5px;pointer-events:none;object-fit:cover}
+.bc.tapped{transform:translate(-50%,-50%) rotate(90deg)}
+.bc.sel{outline:3px solid var(--gold);outline-offset:1px}
+.bc.sel:not(.site){z-index:900!important}
+.bc.chip{border-radius:50%;outline-offset:1px;display:flex;align-items:center;justify-content:center;text-align:center;background:var(--tc);color:var(--tk);font-weight:700;line-height:1;box-shadow:0 1px 4px rgba(0,0,0,.45),inset 0 0 0 2px rgba(255,255,255,.35)}
+.bc.tokrub{display:flex;align-items:center;justify-content:center;background:repeating-linear-gradient(135deg,#6b6660 0 8px,#7b766f 8px 16px);color:#fff;font-weight:700;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+.chipprev{position:absolute;inset:14% 14% 26%;border-radius:50%;background:var(--tc);color:var(--tk);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8rem;box-shadow:inset 0 0 0 2px rgba(255,255,255,.35)}
+.avchip{border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:2px 9px;font-size:.82rem;color:var(--muted)}
+#board .matbg{position:absolute;inset:0;background:center/cover no-repeat;pointer-events:none}
+#board.mat-1 .matbg{background-image:url(img/mat-1.webp)}
+#board.mat-2 .matbg{background-image:url(img/mat-2.webp)}
+#board.flip .matbg{transform:rotate(180deg)}
+.bc.dragging{cursor:grabbing;opacity:.92}
+.bc .dmg{position:absolute;top:-6px;right:-6px;min-width:20px;height:20px;border-radius:10px;background:var(--danger);color:#fff;font:600 .75rem/20px var(--f-mono);text-align:center;padding:0 4px}
+.bc .fallback,.hc .fallback,.thumb .fallback{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;font-size:.6rem;line-height:1.1;padding:3px;color:var(--ink);background:var(--surface);border-radius:5px}
+.back{position:absolute;inset:0;border-radius:5px;background:repeating-linear-gradient(45deg,var(--bk1) 0 6px,var(--bk2) 6px 12px);border:2px solid var(--bk1)}
+.back.atlas{--bk1:#5b4a2a;--bk2:#6f5b35}
+.back.book{--bk1:#2d3a4c;--bk2:#384a61}
+#board .placehint{position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;pointer-events:none}
+#board .placehint span{margin-top:6px;background:var(--ink);color:var(--bg);border-radius:999px;padding:3px 10px;font-size:.82rem}
+/* hand */
+.handbar{position:relative;background:var(--surface);border:1px solid var(--line);border-top:3px solid var(--pc);border-radius:10px;padding:6px;margin-block:4px 6px}
+.handlab{font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 4px 2px}
+#hand{display:flex;gap:6px;overflow-x:auto;touch-action:pan-x;min-height:96px;padding-bottom:2px}
+.hc{position:relative;flex:none;width:68px;aspect-ratio:63/88;border-radius:5px;box-shadow:0 1px 3px rgba(0,0,0,.3);touch-action:pan-x;cursor:grab}
+.hc.site{width:95px;aspect-ratio:88/63;align-self:center}
+.hc img{width:100%;height:100%;object-fit:cover;border-radius:5px;display:block;pointer-events:none}
+.hc.sel{outline:3px solid var(--gold);outline-offset:1px}
+.handcover{position:absolute;inset:0;border-radius:10px;background:var(--surface);display:flex;align-items:center;justify-content:center;text-align:center;padding:10px;z-index:2}
+.empty{color:var(--muted);font-size:.9rem;align-self:center;padding-left:6px}
+/* action bar */
+#actions{position:fixed;left:0;right:0;bottom:0;z-index:1000;background:var(--surface);border-top:1px solid var(--line);box-shadow:0 -6px 20px rgba(0,0,0,.18);padding-bottom:env(safe-area-inset-bottom,0px)}
+#actions .wrap{display:flex;gap:6px;align-items:center;padding-block:8px;flex-wrap:wrap}
+#actions .what{font-weight:600;flex-basis:100%;display:flex;justify-content:space-between;align-items:center;gap:8px}
+#actions .what small{color:var(--muted);font-weight:400}
+.ghost{background:var(--surface)}
+/* sheets */
+dialog{border:0;padding:0;background:var(--surface);color:var(--ink);border-radius:12px;width:min(760px,calc(100vw - 20px));max-height:calc(100dvh - 30px);box-shadow:0 20px 60px rgba(0,0,0,.35)}
+dialog::backdrop{background:rgba(10,12,14,.55)}
+.sheet{padding:16px;display:flex;flex-direction:column;gap:12px}
+.sheet h2{font-family:var(--f-display);font-weight:400;margin:0;font-size:1.4rem}
+.sheet .row{display:flex;gap:8px;flex-wrap:wrap}
+.thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:8px;max-height:52dvh;overflow:auto}
+.thumb{position:relative;aspect-ratio:63/88;border-radius:5px;overflow:hidden;cursor:pointer;border:0;padding:0;background:var(--bg)}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb .toklab{position:absolute;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);color:#fff;font-size:.68rem;padding:1px 3px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.thumb .pos{position:absolute;left:3px;top:3px;background:rgba(0,0,0,.65);color:#fff;font:600 .7rem var(--f-mono);border-radius:4px;padding:0 4px}
+.zoom{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:16px}
+.zoom img{width:100%;border-radius:8px;display:block}
+.zoom .pt{font-family:var(--f-display);font-size:1.6rem;line-height:1.1}
+.zoom .en{color:var(--muted);font-size:.9rem}
+.zoom .text{white-space:pre-line;margin:.6rem 0}
+.kw{text-decoration:underline dotted color-mix(in srgb,var(--gold) 70%,transparent);text-underline-offset:3px;cursor:help}
+.kw:hover,.kw.on{color:var(--gold)}
+#tip{position:fixed;z-index:4000;max-width:min(280px,calc(100vw - 16px));background:var(--ink);color:var(--bg);border-radius:8px;padding:8px 10px;font-size:.88rem;line-height:1.35;box-shadow:0 6px 20px rgba(0,0,0,.3);pointer-events:none}
+#tip strong{display:block;margin-bottom:2px}
+.cover{position:fixed;inset:0;z-index:2000;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:24px}
+.cover h2{font-family:var(--f-display);font-weight:400;font-size:2rem;margin:0}
+.cover p{color:var(--muted);margin:0;max-width:40ch}
+@media (max-width:640px){.zoom{grid-template-columns:1fr}.piles{margin-left:0}.pname{max-width:7em}#board{width:100%;max-width:100%}.zone .zl{font-size:.5rem;padding:0 4px}}
+</style>
+</head>
+<body>
+
+<section id="setup" class="wrap">
+  <h1>Mesa Virtual</h1>
+  <p class="sub">Uma mesa para jogar Sorcery no mesmo aparelho, com as cartas dos decks prontos. Vocês movem as cartas e fazem as contas; a mesa só guarda tudo no lugar.</p>
+  <div id="resume" class="setup-row" hidden style="margin-bottom:14px">
+    <button class="btn" id="resumebtn" type="button">Continuar a partida salva</button>
+    <span class="note" id="resumeinfo"></span>
+  </div>
+  <div class="seats">
+    <div class="seat" style="--pc:var(--p0)">
+      <label for="n0">Jogador de baixo</label><input id="n0" type="text" value="Jogador 1">
+      <label for="d0">Deck</label><select id="d0"></select>
+    </div>
+    <div class="seat" style="--pc:var(--p1)">
+      <label for="n1">Jogador de cima</label><input id="n1" type="text" value="Jogador 2">
+      <label for="d1">Deck</label><select id="d1"></select>
+    </div>
+  </div>
+  <div class="setup-row">
+    <label for="first">Quem começa</label>
+    <select id="first"><option value="r">Sortear</option><option value="0">Jogador de baixo</option><option value="1">Jogador de cima</option></select>
+    <label for="mat">Tapete</label>
+    <select id="mat"><option value="1">Campo de batalha</option><option value="2">Espíritos roxos</option></select>
+    <button class="btn" id="startbtn" type="button" disabled>Carregando cartas…</button>
+    <a class="btn ghost" href="index.html" style="text-decoration:none">Voltar ao Grimório</a>
+  </div>
+  <p class="note" style="margin-top:16px">Cada um começa com 20 de vida, o Avatar no meio da própria borda e 3 terrenos e 3 feitiços na mão. Toque numa carta para ver o que dá para fazer com ela; arraste para mover. A partida fica salva neste aparelho.</p>
+</section>
+
+<section id="game" hidden>
+  <div class="wrap topbar">
+    <a href="index.html" aria-label="Voltar ao Grimório">← Grimório</a>
+    <span class="turn" id="turnlab"></span>
+    <button class="btn ghost small" id="undobtn" type="button">Desfazer</button>
+    <button class="btn ghost small" id="tokbtn" type="button">Fichas</button>
+    <button class="btn ghost small" id="menubtn" type="button">Mais</button>
+    <button class="btn small" id="passbtn" type="button">Passar a vez</button>
+  </div>
+  <div class="wrap" id="strip1"></div>
+  <div class="wrap boardwrap"><div id="board" aria-label="Reino"></div></div>
+  <div class="wrap" id="strip0"></div>
+  <div class="wrap"><div class="handbar" id="handbar">
+    <p class="handlab" id="handlab"></p>
+    <div id="hand"></div>
+    <div class="handcover" id="handcover" hidden><button class="btn" id="showhand" type="button"></button></div>
+  </div></div>
+</section>
+
+<div id="actions" hidden><div class="wrap" id="actwrap"></div></div>
+
+<dialog id="sheet"><div class="sheet" id="sheetbody"></div></dialog>
+
+<div id="tip" role="tooltip" hidden></div>
+<div class="cover" id="cover" hidden>
+  <h2 id="covertitle"></h2>
+  <p>Passe o aparelho. A mão só aparece quando o próximo jogador tocar no botão.</p>
+  <button class="btn" id="coverbtn" type="button">Mostrar minha mão</button>
+</div>
+
+<script>
+const DECK_PT={"beta-air":"Beta · Ar (Sparkmage)","beta-earth":"Beta · Terra (Geomancer)","beta-fire":"Beta · Fogo (Flamecaller)","beta-water":"Beta · Água (Waveshaper)","gothic-persecutor":"Gothic · Perseguidor","gothic-necromancer":"Gothic · Necromante","gothic-harbinger":"Gothic · Arauto","gothic-savior":"Gothic · Salvador"};
+const GLOSS = [
+{id:"adjacente",pt:"Adjacente",en:"Adjacent",d:"Os quadrados vizinhos de lado: cima, baixo, esquerda e direita. Diagonal não conta.",re:"adjacentes?"},
+{id:"aleatorio",pt:"Aleatório",en:"Random",d:"Sorteado, com dado ou com cartas viradas para baixo.",re:"aleatóri[oa]s?"},
+{id:"aliado",pt:"Aliado / Inimigo",en:"Ally / Enemy",d:"Aliado é o que você controla; inimigo é o que o oponente controla.",re:null},
+{id:"andarvazio",pt:"Andar no vazio",en:"Voidwalk",d:"Pode entrar e ficar em quadrados vazios, sem terreno.",re:"andar no vazio"},
+{id:"atlas",pt:"Atlas",en:"Atlas",d:"O monte de terrenos do jogador.",re:"atlas"},
+{id:"banir",pt:"Banir",en:"Banish",d:"Remove a carta do jogo. Ela não vai para o cemitério.",re:"ban(?:a|ir|ido|idos|ida|idas|indo|e|em|ia)"},
+{id:"carregar",pt:"Carregar, pegar e largar",en:"Carry, pick up, drop",d:"Unidades levam artefatos (e às vezes outros lacaios) consigo. Podem pegar ou largar o que está no mesmo local; o que é largado fica ali.",re:"carreg(?:ar|a|am|ado|ados|ada|ando|ue)|larg(?:ar|a|am|ada|ado|á-la|á-lo)|pegar?|pega"},
+{id:"cemiterio",pt:"Cemitério",en:"Cemetery",d:"A pilha de descarte de cada jogador: lacaios mortos, magias usadas, cartas destruídas.",re:"cemitérios?"},
+{id:"colecao",pt:"Coleção",en:"Collection",d:"Cartas suas guardadas fora do deck, separadas antes da partida, que algumas cartas podem buscar.",re:"coleç(?:ão|ões)"},
+{id:"conjurador",pt:"Conjurador",en:"Spellcaster",d:"Pode conjurar magias a partir de onde está. O Avatar sempre é conjurador. “Conjurador de Fogo” só conjura magias de Fogo.",re:"conjurador(?:es)?(?: de (?:Ar|Terra|Fogo|Água)(?: e (?:Ar|Terra|Fogo|Água))?)?"},
+{id:"conjurar",pt:"Conjurar",en:"Cast",d:"Jogar um feitiço da mão pagando o custo de mana e tendo o limiar.",re:"conjur(?:ar|a|e|ado|ados|ada|adas|ou|am|arem|ar\\w*)"},
+{id:"corpoagua",pt:"Corpo d'água",en:"Body of water",d:"Um grupo de terrenos de água encostados uns nos outros.",re:"corpo d'água"},
+{id:"criar",pt:"Criar",en:"Conjure",d:"Colocar algo no jogo direto, sem conjurar da mão (por exemplo, criar uma aura ou um artefato).",re:"cri(?:ar|e|ado|ada|a)"},
+{id:"defender",pt:"Defender",en:"Defend",d:"Quando um inimigo ataca, suas unidades desviradas no local ou adjacentes podem entrar na luta no lugar do alvo.",re:"defend(?:er|e|em|ida|idas|ido|endo)"},
+{id:"desabilitado",pt:"Desabilitado",en:"Disabled",d:"Não pode virar, agir, se mover nem golpear enquanto estiver assim.",re:"desabilit\\w*"},
+{id:"direcaoreta",pt:"Direção reta",en:"Cardinal direction",d:"Para cima, para baixo, para a esquerda ou para a direita. Diagonal não conta.",re:"direç(?:ão|ões) retas?"},
+{id:"dissipar",pt:"Dissipar",en:"Dispel",d:"Remover uma aura do tabuleiro.",re:"dissip(?:ar|e|a)"},
+{id:"escavador",pt:"Escavador",en:"Burrowing",d:"Pode descer para o subsolo, embaixo de um terreno de terra, e andar por lá.",re:"escavador(?:es)?"},
+{id:"escombros",pt:"Escombros",en:"Rubble",d:"Ficha de terreno sem mana e sem elemento.",re:"escombros"},
+{id:"esqueleto",pt:"Esqueleto",en:"Skeleton",d:"Ficha de lacaio Morto-vivo. Não pode se mover para defender.",re:"esqueletos?"},
+{id:"ferido",pt:"Ferido",en:"Wounded",d:"Lacaio que está com dano neste turno.",re:"ferid[oa]s?"},
+{id:"ficha",pt:"Ficha",en:"Token",d:"Carta ou marcador criado por efeitos, que não vem no baralho: Soldado, Esqueleto, Sapo, Escombros, Lança. Use moedas ou qualquer marcador.",re:"fichas?"},
+{id:"furtivo",pt:"Furtivo",en:"Stealth",d:"Não pode ser alvo nem interceptado pelo inimigo. Perde o Furtivo quando ataca ou quando um efeito o revela.",re:"furtiv[oa]s?"},
+{id:"genese",pt:"Gênese",en:"Genesis",d:"Efeito que acontece quando a carta entra em jogo.",re:"gêneses?"},
+{id:"golpear",pt:"Golpear",en:"Strike",d:"Causar dano igual ao próprio poder. No combate, os dois lados se golpeiam ao mesmo tempo.",re:"golpe(?:ar|ia|iam|ie|iem|á-lo|á-la|á-los|ou|s)?|golpeado"},
+{id:"golpeprimeiro",pt:"Golpear primeiro",en:"Strikes first",d:"No combate, golpeia antes do outro lado. Se matar o oponente, não leva o golpe de volta.",re:"golpeiam? primeiro"},
+{id:"grimorio",pt:"Grimório",en:"Spellbook",d:"O monte de feitiços do jogador: lacaios, magias, auras e artefatos.",re:"grimórios?"},
+{id:"imovel",pt:"Imóvel",en:"Immobile",d:"Não pode se mover.",re:"imóve(?:l|is)"},
+{id:"interceptar",pt:"Interceptar",en:"Intercept",d:"Quando um inimigo entra num local com unidades suas desviradas, elas podem pará-lo e lutar.",re:"intercept\\w*"},
+{id:"inundar",pt:"Inundar",en:"Flood",d:"O terreno passa a contar como terreno de água.",re:"inund\\w*"},
+{id:"investida",pt:"Investida",en:"Charge",d:"Pode agir no mesmo turno em que foi invocado.",re:"investida"},
+{id:"lanca",pt:"Lança",en:"Lance",d:"Ficha carregada como arma: o próximo golpe do portador contra unidades causa +1 de dano e acontece primeiro, depois a Lança quebra.",re:"lança"},
+{id:"letal",pt:"Letal",en:"Lethal",d:"Qualquer dano dele mata um lacaio.",re:"letal"},
+{id:"limiar",pt:"Limiar",en:"Threshold",d:"Os símbolos de elemento que um feitiço exige. Some os símbolos dos seus terrenos; precisa ter pelo menos aquela quantidade de cada um.",re:"limiar"},
+{id:"lutar",pt:"Lutar",en:"Fight",d:"Duas unidades se golpeiam ao mesmo tempo.",re:"lut(?:ar|a|am|arem|e|em|ou)"},
+{id:"maligno",pt:"Maligno",en:"Evil",d:"Cartas marcadas como Evil, como muitos Demônios e Mortos-vivos. Várias cartas sagradas do Gothic agem contra elas.",re:"malign[oa]s?|mal\\b",cs:1},
+{id:"mana",pt:"Mana",en:"Mana",d:"Cada terreno dá 1 de mana por turno. O número dentro do círculo (① ②) é quanto pagar.",re:null},
+{id:"mortovivo",pt:"Morto-vivo",en:"Undead",d:"Tipo de lacaio. Muitos são Malignos e voltam do cemitério.",re:"mortos?-vivos?"},
+{id:"movimento",pt:"Movimento +X",en:"Movement +X",d:"Anda X passos a mais quando se move.",re:"movimento \\+\\d"},
+{id:"passo",pt:"Passo",en:"Step",d:"Andar um quadrado para um local adjacente.",re:null},
+{id:"perfurante",pt:"Perfurante",en:"Piercing",d:"O projétil atravessa e acerta todos no caminho.",re:"perfurantes?"},
+{id:"portador",pt:"Portador",en:"Bearer",d:"A unidade que carrega um artefato.",re:"portador(?:es)?"},
+{id:"portasmorte",pt:"Portas da morte",en:"Death's Door",d:"Avatar com 0 de vida. Não pode mais se curar, e o próximo dano direto nele encerra o jogo.",re:"portas da morte"},
+{id:"preso",pt:"Preso à terra / à água",en:"Landbound / Waterbound",d:"Preso à terra: só fica em terrenos que não são de água. Preso à água: só fica em terrenos de água.",re:"preso à (?:terra|água)"},
+{id:"projetil",pt:"Projétil",en:"Projectile",d:"Disparo em linha reta numa direção. Acerta a primeira unidade no caminho.",re:"projéte?(?:il|is)"},
+{id:"protecao",pt:"Proteção",en:"Ward",d:"Barreira de uso único num lacaio ou terreno. Absorve o primeiro dano, uma destruição ou um feitiço ou habilidade que o escolha como alvo, e então quebra.",re:"proteç(?:ão|ões)|protegid[oa]s?|protej(?:a|am)|proteg(?:er|e)"},
+{id:"proximo",pt:"Próximo",en:"Nearby",d:"O mesmo quadrado e os 8 em volta, contando as diagonais.",re:"próxim[oa]s?(?! (?:turno|feitiço|feitiços|vez|ataque|golpe|Dragão|Fera|Maligno|lacaio|terreno|terrenos|jogador|cinco|três|quatro|seis|sete|dois|duas|magia|spell))"},
+{id:"distancia",pt:"À distância",en:"Ranged",d:"Ataca uma unidade a 1 passo sem se mover (ou mais longe, se tiver um número). Quem é atacado assim não golpeia de volta.",re:"à distância(?: \\d)?"},
+{id:"raridade",pt:"Comum\nExcepcional\nElite\nÚnico",en:"Ordinary\nExceptional\nElite\nUnique",d:"As quatro raridades, da mais comum à mais rara.",re:"comuns?|excepciona(?:l|is)|elite|únic[oa]s?",cs:1},
+{id:"ritomorte",pt:"Rito de morte",en:"Deathrite",d:"Efeito que acontece quando a carta morre.",re:"ritos? de morte"},
+{id:"sacrificar",pt:"Sacrificar",en:"Sacrifice",d:"Mandar uma carta sua para o cemitério por vontade própria, como custo de um efeito.",re:"sacrific\\w*"},
+{id:"sapo",pt:"Sapo",en:"Frog",d:"Ficha de lacaio 1 de poder com Submergir.",re:"sapos?",cs:1},
+{id:"silenciado",pt:"Silenciado",en:"Silenced",d:"Perde as habilidades enquanto estiver assim.",re:"silenci\\w*"},
+{id:"soldado",pt:"Soldado",en:"Foot Soldier",d:"Ficha de lacaio 1 de poder.",re:"soldados?"},
+{id:"submergir",pt:"Submergir",en:"Submerge",d:"Em terreno de água, pode ficar submerso, embaixo d'água. Unidades submersas só lutam com outras na mesma camada.",re:"submer\\w*"},
+{id:"subsolo",pt:"Subsolo e superfície",en:"Underground, surface",d:"O subsolo é a camada embaixo de um terreno de terra. A superfície é em cima dos terrenos. Quem está numa camada só interage com quem está na mesma.",re:"subsolo|superfície"},
+{id:"teletransportar",pt:"Teletransportar",en:"Teleport",d:"Ir direto ao destino, sem passar pelo caminho nem ser interceptado.",re:"teletransport\\w*"},
+{id:"tipos",pt:"Tipos de lacaio",en:"Mortal, Beast, Demon...",d:"Mortal, Fera, Demônio, Anjo, Dragão, Fada, Espírito, Gigante, Monstro, Morto-vivo e outros. Algumas cartas afetam só um tipo.",re:"mortais|mortal|feras?|demônios?|anjos?|dragões|dragão|fadas?|espíritos?|gigantes?|monstros?|autômatos?",cs:1},
+{id:"ultimalinha",pt:"Última linha",en:"Back row",d:"A linha do tabuleiro mais perto de você.",re:"última linha"},
+{id:"vazio",pt:"Vazio",en:"Void",d:"Quadrado sem terreno.",re:"vazios?"},
+{id:"virar",pt:"Virar / Desvirar",en:"Tap / Untap",d:"Virar é deitar a carta para usar (mover, atacar, habilidade com “Vire:”). Desvirar é levantar de volta, no início do seu turno.",re:"vire|virar|virad[oa]s?|vira-se|desvir\\w*"},
+{id:"voador",pt:"Voador",en:"Airborne",d:"Pode andar na diagonal e voa por cima do que está no chão.",re:"voador(?:es)?"},
+{id:"livremente",pt:"Se move livremente",en:"Moves freely",d:"Andar dessa forma não conta como passo do movimento normal.",re:"livremente"}
+];
+const KW_ORDER=GLOSS.filter(g=>g.re).map((g,i)=>[g,i]).sort((a,b)=>(/ /.test(b[0].re)-/ /.test(a[0].re))||a[1]-b[1]).map(x=>x[0]);
+const KW_RE=new RegExp("(?<![\\p{L}\\p{N}])(?:"+KW_ORDER.map(g=>"("+g.re.replace(/\((?!\?)/g,"(?:")+")").join("|")+")(?![\\p{L}\\p{N}])","giu");
+function linkKw(text){return esc(text).replace(KW_RE,(m,...groups)=>{const k=groups.findIndex((x,i)=>i<KW_ORDER.length&&x!==undefined);const g=KW_ORDER[k];if(!g)return m;if(g.cs&&m[0]!==m[0].toUpperCase())return m;return `<span class="kw" data-g="${g.id}" tabindex="0">${m}</span>`})}
+const TOK={foot_soldier:["Soldado","#8c6d3f","#fff"],skeleton:["Esqueleto","#e6e1d3","#2a2620"],frog:["Sapo","#4f8a3a","#fff"],lance:["Lança","#8a8f99","#fff"],rubble:["Escombros","#6b6660","#fff"]};
+const TOKENS=[["foot_soldier","Soldado"],["skeleton","Esqueleto"],["frog","Sapo"],["lance","Lança"],["rubble","Escombros"]];
+const ELV=["--air","--earth","--fire","--water"], ELL=["A","T","F","Á"];
+let CARDS=[], BYSLUG={}, BYNAME={}, DECKS={};
+let S=null;              /* game state */
+let sel=null;            /* selected card id */
+let placing=false;       /* next tap on board places the selected card */
+let handHidden=false;
+const undoStack=[];
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const store={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+
+/* ---------- state helpers ---------- */
+function cardOf(id){return S.cards[id]}
+function info(c){return c.slug?BYSLUG[c.slug]:null}
+function isSite(c){const i=info(c);return i?i.ty==="Site":false}
+function zoneList(p,z){return S.players[p][z]}
+function removeFromZone(id){
+  const c=cardOf(id);
+  if(c.zone==="board"){S.board=S.board.filter(b=>b.id!==id)}
+  else{const l=zoneList(c.owner,c.zone);const i=l.indexOf(id);if(i>=0)l.splice(i,1)}
+}
+function moveTo(id,zone,opts={}){
+  const c=cardOf(id);
+  removeFromZone(id);
+  if(c.token&&zone!=="board"){delete S.cards[id];return}
+  c.zone=zone; if(zone!=="board"){c.tapped=false;c.dmg=0;c.down=false}
+  if(zone==="board"){S.board.push({id,x:opts.x??2.5,y:opts.y??(c.owner===0?2.5:1.5)})}
+  else{const l=zoneList(c.owner,zone); if(opts.bottom)l.push(id); else l.unshift(id)}
+}
+function deckZoneOf(c){return isSite(c)?"atlas":"book"}
+function snapshot(){undoStack.push(JSON.stringify(S));if(undoStack.length>40)undoStack.shift()}
+function save(){store.set("jogo",S)}
+function commit(){save();render()}
+
+/* ---------- setup ---------- */
+function newGame(){
+  const decks=[$("d0").value,$("d1").value], names=[$("n0").value.trim()||"Jogador 1",$("n1").value.trim()||"Jogador 2"];
+  const f=$("first").value; const first=f==="r"?(Math.random()<.5?0:1):+f;
+  S={v:1,turn:first,round:1,next:1,mat:$("mat").value,cards:{},board:[],players:[]};
+  decks.forEach((dk,p)=>{
+    const pl={name:names[p],deck:dk,life:20,th:[0,0,0,0],hand:[],atlas:[],book:[],grave:[],banish:[]};
+    S.players.push(pl);
+    for(const[n,q] of Object.entries(DECKS[dk])){
+      const ci=BYNAME[n]; if(!ci)continue;
+      for(let k=0;k<q;k++){
+        const id="c"+(S.next++); S.cards[id]={slug:ci.s,owner:p,zone:"",tapped:false,down:false,dmg:0};
+        if(ci.ty==="Avatar"){S.cards[id].zone="board";S.board.push({id,x:2.5,y:p===0?3.5:0.5})}
+        else if(ci.ty==="Site"){S.cards[id].zone="atlas";pl.atlas.push(id)}
+        else{S.cards[id].zone="book";pl.book.push(id)}
+      }
+    }
+    shuffle(pl.atlas);shuffle(pl.book);
+    for(let k=0;k<3;k++){draw(p,"atlas",true);draw(p,"book",true)}
+  });
+  undoStack.length=0; sel=null; placing=false;
+  save(); startGame(true);
+}
+function draw(p,z,silent){
+  const l=zoneList(p,z); if(!l.length)return false;
+  const id=l.shift(); const c=cardOf(id); c.zone="hand"; S.players[p].hand.push(id);
+  if(!silent)commit(); return true;
+}
+function startGame(coverFirst){
+  $("setup").hidden=true;$("game").hidden=false;
+  if(coverFirst)showCover(); else{handHidden=false;render()}
+}
+
+/* ---------- geometry: the realm grid sits inside the playmat ---------- */
+const G={l:104/894,t:18/583,w:682/894,h:547.5/583};          /* grid rectangle as fractions of the mat */
+const XMIN=-G.l/G.w*5, XMAX=5+(1-G.l-G.w)/G.w*5, YMIN=-G.t/G.h*4, YMAX=4+(1-G.t-G.h)/G.h*4;
+let FLIP=false;                                              /* the table is seen from the other side */
+const VL=()=>FLIP?1-G.l-G.w:G.l, VT=()=>FLIP?1-G.t-G.h:G.t;
+const pctX=x=>(VL()+(FLIP?5-x:x)/5*G.w)*100, pctY=y=>(VT()+(FLIP?4-y:y)/4*G.h)*100;
+const MX=(XMIN/2), MX2=(5+XMAX)/2;                          /* centers of the left and right margins */
+function zonesOf(p){ /* each player keeps decks on the left margin and discards on the right, in their own half */
+  /* seen from each player's own seat: decks on their left, discards on their right (so the opponent's are mirrored) */
+  const r1=p===0?3.5:0.5, r2=p===0?2.5:1.5, L=p===0?MX:MX2, R=p===0?MX2:MX;
+  return [{z:"book",x:L,y:r1,lab:"Grimório"},{z:"atlas",x:L,y:r2,lab:"Atlas"},{z:"grave",x:R,y:r1,lab:"Cemitério"},{z:"banish",x:R,y:r2,lab:"Banidas"}];
+}
+function inGrid(p){return p.x>=0&&p.x<5&&p.y>=0&&p.y<4}
+function snap(c,pos,ignore){
+  if(!inGrid(pos))return pos;
+  const cx=Math.floor(pos.x)+.5, cy=Math.floor(pos.y)+.5;
+  if(isSite(c))return {x:cx,y:cy};
+  const n=S.board.filter(b=>b.id!==ignore&&!isSite(cardOf(b.id))&&Math.floor(b.x)===Math.floor(cx)&&Math.floor(b.y)===Math.floor(cy)).length;
+  const off=[[0,0],[.22,.06],[-.22,.06],[0,-.14],[.22,-.1],[-.22,-.1]][n%6];
+  return {x:cx+off[0],y:cy+off[1]};
+}
+
+/* ---------- rendering ---------- */
+function fitBoard(){ /* the mat takes the height left by the bars and the hand, never more than the width */
+  const B=$("board"), wrap=B.parentNode;
+  const used=["topbar","strip1","strip0","handbar"].reduce((s,id)=>{const el=id==="topbar"?document.querySelector(".topbar"):$(id);return s+(el?el.offsetHeight:0)},0)+40;
+  const avail=Math.max(200,window.innerHeight-used);
+  const maxW=wrap.clientWidth-(parseFloat(getComputedStyle(wrap).paddingLeft)||0)-(parseFloat(getComputedStyle(wrap).paddingRight)||0);
+  B.style.width=Math.max(Math.min(280,maxW),Math.min(maxW,avail*894/583))+"px";
+}
+function imgTag(c){
+  const i=info(c);
+  return `<img src="img/${c.slug}.webp" alt="" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'fallback',textContent:${JSON.stringify(i?i.p:"Carta")}}))">`;
+}
+function stripHTML(p){
+  const pl=S.players[p];
+  return `<div class="strip ${S.turn===p?"active":""}" style="--pc:var(--p${p})" data-p="${p}">
+    <span class="pname" title="${esc(DECK_PT[pl.deck])}">${esc(pl.name)}</span>
+    ${(()=>{const av=Object.keys(S.cards).find(id=>S.cards[id].owner===p&&info(S.cards[id])&&info(S.cards[id]).ty==="Avatar");return av?`<button class="avchip" data-zoom="${av}" type="button" title="Ver o Avatar">${esc(info(S.cards[av]).p)}</button>`:""})()}
+    <span class="life ${pl.life<=0?"door":""}" title="${pl.life<=0?"Às portas da morte":"Vida"}"><button class="st" data-life="-1" aria-label="Menos 1 de vida">−</button><span class="v">${pl.life}</span><button class="st" data-life="1" aria-label="Mais 1 de vida">+</button></span>
+    <span class="els">${pl.th.map((v,k)=>`<span class="el" style="--c:var(${ELV[k]})"><b>${ELL[k]}</b><button data-th="${k}" data-d="-1" aria-label="Menos">−</button><span>${v}</span><button data-th="${k}" data-d="1" aria-label="Mais">+</button></span>`).join("")}</span>
+    <span class="piles">
+      <button class="pile" data-pile="atlas">Atlas <span class="n">${pl.atlas.length}</span></button>
+      <button class="pile" data-pile="book">Grimório <span class="n">${pl.book.length}</span></button>
+      <button class="pile" data-pile="grave">Cemitério <span class="n">${pl.grave.length}</span></button>
+      ${pl.banish.length?`<button class="pile" data-pile="banish">Banidas <span class="n">${pl.banish.length}</span></button>`:""}
+      <span class="pile" title="Cartas na mão">Mão <span class="n">${pl.hand.length}</span></span>
+    </span></div>`;
+}
+function render(){
+  if(!S)return;
+  $("turnlab").textContent=`Vez de ${S.players[S.turn].name}`;
+  const bottom=S.flip===false?0:S.turn; FLIP=bottom===1;
+  $("strip0").innerHTML=stripHTML(bottom); $("strip1").innerHTML=stripHTML(1-bottom);
+  /* board */
+  fitBoard();
+  const B=$("board"); B.className="mat-"+(S.mat||"1")+(FLIP?" flip":""); const W=B.clientWidth||600; const cell=W*G.w/5;
+  const zones=[0,1].flatMap(p=>zonesOf(p).map(zz=>{
+    const l=S.players[p][zz.z], top=l[0]&&cardOf(l[0]), w=cell*.6;
+    const face=(zz.z==="grave"||zz.z==="banish")&&top?imgTag(top):(l.length?`<div class="back ${zz.z==="atlas"?"atlas":"book"}"></div>`:"");
+    return `<div class="zone" data-p="${p}" data-z="${zz.z}" style="left:${pctX(zz.x)}%;top:${pctY(zz.y)}%;width:${w}px;aspect-ratio:63/88;--pc:var(--p${p})">${face}${l.length?`<span class="zn">${l.length}</span>`:""}<span class="zl">${zz.lab}</span></div>`}));
+  B.innerHTML=`<div class="matbg"></div><div class="gridov" style="left:${VL()*100}%;top:${VT()*100}%;width:${G.w*100}%;height:${G.h*100}%"></div>`+zones.join("")+S.board.map((b,i)=>{
+    const c=cardOf(b.id); const site=isSite(c); const tk=c.token&&TOK[c.slug];
+    const pos=`left:${pctX(b.x)}%;top:${pctY(b.y)}%;--pc:var(--p${c.owner})`;
+    const w=tk?(site?cell*.6:cell*.42):(site?cell*.94:cell*.56);   /* tokens are small cards */
+    return `<div class="bc ${site?"site":""} ${c.tapped?"tapped":""} ${sel===b.id?"sel":""}" data-id="${b.id}" style="${pos};width:${w}px;aspect-ratio:${site?"88/63":"63/88"};z-index:${site?10+i:100+i}">
+      ${c.down?`<div class="back ${site?"atlas":"book"}"></div>`:imgTag(c)}${c.dmg?`<span class="dmg">${c.dmg}</span>`:""}</div>`}).join("")+(placing?`<div class="placehint"><span>Toque num quadrado do reino ou numa pilha</span></div>`:"");
+  /* hand */
+  const p=S.turn, pl=S.players[p];
+  $("handbar").style.setProperty("--pc",`var(--p${p})`);
+  $("handlab").textContent=`Mão de ${pl.name} · ${pl.hand.length} cartas`;
+  $("hand").innerHTML=pl.hand.length?pl.hand.map(id=>{const c=cardOf(id);return `<div class="hc ${isSite(c)?"site":""} ${sel===id?"sel":""}" data-id="${id}">${imgTag(c)}</div>`}).join(""):`<span class="empty">Sem cartas na mão.</span>`;
+  $("handcover").hidden=!handHidden; $("showhand").textContent=`Mostrar a mão de ${pl.name}`;
+  $("undobtn").disabled=!undoStack.length;
+  renderActions();
+}
+window.addEventListener("resize",()=>render());
+
+/* ---------- actions ---------- */
+function act(label,fn,cls=""){return {label,fn,cls}}
+function renderActions(){
+  const bar=$("actions");
+  if(!sel||!S.cards[sel]){bar.hidden=true;document.body.style.paddingBottom="";return}
+  const c=cardOf(sel), i=info(c), z=c.zone, dz=deckZoneOf(c);
+  const ZN={board:"no reino",hand:"na mão",atlas:"no Atlas",book:"no Grimório",grave:"no cemitério",banish:"banida"};
+  const A=[act("Ampliar",()=>zoom(sel),"ghost")];
+  if(z==="board"){
+    A.push(act(c.tapped?"Desvirar":"Virar",()=>mut(()=>{c.tapped=!c.tapped})));
+    A.push(act("Dano −",()=>mut(()=>{c.dmg=Math.max(0,c.dmg-1)}),"ghost"),act("Dano +",()=>mut(()=>{c.dmg++}),"ghost"));
+    A.push(act(c.down?"Mostrar face":"Face para baixo",()=>mut(()=>{c.down=!c.down}),"ghost"));
+  }else A.push(act("Pôr no reino",()=>{placing=true;render()}));
+  if(c.token) A.push(act("Remover ficha",()=>mut(()=>{removeFromZone(sel);delete S.cards[sel];sel=null})));
+  else{
+    if(z!=="hand")A.push(act("Para a mão",()=>mut(()=>moveTo(sel,"hand",{bottom:true})),"ghost"));
+    if(z!=="grave")A.push(act("Cemitério",()=>mut(()=>moveTo(sel,"grave")),"ghost"));
+    A.push(act(dz==="atlas"?"Topo do Atlas":"Topo do Grimório",()=>mut(()=>moveTo(sel,dz)),"ghost"));
+    A.push(act(dz==="atlas"?"Fundo do Atlas":"Fundo do Grimório",()=>mut(()=>moveTo(sel,dz,{bottom:true})),"ghost"));
+    if(z!=="banish")A.push(act("Banir",()=>mut(()=>moveTo(sel,"banish")),"ghost"));
+  }
+  A.push(act("Fechar",()=>{sel=null;placing=false;render()},"ghost"));
+  $("actwrap").innerHTML=`<div class="what"><span>${esc(i?i.p:"Carta")} <small>${ZN[z]||""} · ${esc(S.players[c.owner].name)}</small></span></div>`+A.map((a,k)=>`<button class="btn small ${a.cls}" data-a="${k}" type="button">${a.label}</button>`).join("");
+  bar.hidden=false; bar._acts=A;
+  document.body.style.paddingBottom=bar.offsetHeight+"px";
+}
+$("actwrap").addEventListener("click",e=>{const b=e.target.closest("[data-a]");if(b&&sel&&S.cards[sel])$("actions")._acts[+b.dataset.a].fn()});
+function mut(fn){snapshot();fn();if(sel&&!S.cards[sel])sel=null;commit()}
+
+/* strips: life, thresholds, piles */
+function stripClick(e){
+  const st=e.target.closest(".strip"); if(!st)return; const p=+st.dataset.p, pl=S.players[p];
+  const zb=e.target.closest("[data-zoom]"); if(zb){zoom(zb.dataset.zoom);return}
+  const lb=e.target.closest("[data-life]"), tb=e.target.closest("[data-th]"), pb=e.target.closest("[data-pile]");
+  if(lb) mut(()=>{pl.life=Math.max(0,pl.life+ +lb.dataset.life)});
+  if(tb) mut(()=>{const k=+tb.dataset.th;pl.th[k]=Math.max(0,pl.th[k]+ +tb.dataset.d)});
+  if(pb) openPile(p,pb.dataset.pile);
+}
+$("strip0").addEventListener("click",stripClick); $("strip1").addEventListener("click",stripClick);
+
+/* sheets */
+const sheet=$("sheet");
+function openSheet(html){$("sheetbody").innerHTML=html;if(!sheet.open)sheet.showModal()}
+sheet.addEventListener("click",e=>{if(e.target===sheet)sheet.close()});
+function thumbs(ids,numbered){return `<div class="thumbs">${ids.map((id,k)=>{const c=cardOf(id);return `<button class="thumb" data-pick="${id}" type="button">${imgTag(c)}${numbered?`<span class="pos">${k+1}</span>`:""}</button>`}).join("")||`<span class="empty">Vazio.</span>`}</div>`}
+function openPile(p,z,peek){
+  const pl=S.players[p];
+  const T={atlas:"Atlas",book:"Grimório",grave:"Cemitério",banish:"Banidas"}[z];
+  const l=pl[z];
+  if(z==="atlas"||z==="book"){
+    openSheet(`<h2>${T} de ${esc(pl.name)} · ${l.length}</h2>
+      <div class="row">
+        <button class="btn" data-sh="draw" type="button">Comprar uma</button>
+        <button class="btn ghost" data-sh="peek3" type="button">Olhar as 3 de cima</button>
+        <button class="btn ghost" data-sh="all" type="button">Ver todas (procurar)</button>
+        <button class="btn ghost" data-sh="shuffle" type="button">Embaralhar</button>
+        <button class="btn ghost" data-sh="close" type="button">Fechar</button>
+      </div>
+      ${peek?`<p class="note" style="margin:0">${peek==="all"?"Na ordem do monte, de cima para baixo. Toque numa carta para mexer nela.":"As 3 de cima, na ordem. Toque numa carta para mexer nela."}</p>${thumbs(peek==="all"?l:l.slice(0,3),true)}`:""}`);
+  }else{
+    openSheet(`<h2>${T} de ${esc(pl.name)} · ${l.length}</h2><p class="note" style="margin:0">Toque numa carta para mexer nela.</p>${thumbs(l,false)}<div class="row"><button class="btn ghost" data-sh="close" type="button">Fechar</button></div>`);
+  }
+  sheet._ctx={p,z};
+}
+$("sheetbody").addEventListener("click",e=>{
+  const b=e.target.closest("[data-sh]"), t=e.target.closest("[data-pick]"), ctx=sheet._ctx||{};
+  if(t){sel=t.dataset.pick;placing=false;sheet.close();render();return}
+  if(!b)return;
+  const a=b.dataset.sh;
+  if(a==="close")sheet.close();
+  if(a==="draw"){snapshot();draw(ctx.p,ctx.z);sheet.close()}
+  if(a==="peek3")openPile(ctx.p,ctx.z,"3");
+  if(a==="all")openPile(ctx.p,ctx.z,"all");
+  if(a==="shuffle"){mut(()=>shuffle(S.players[ctx.p][ctx.z]));openPile(ctx.p,ctx.z)}
+  if(a==="token"){mut(()=>{const id="c"+(S.next++);S.cards[id]={slug:b.dataset.slug,owner:S.turn,zone:"board",tapped:false,down:false,dmg:0,token:true};S.board.push({id,x:2.5,y:S.turn===0?2.5:1.5});sel=id});sheet.close()}
+  if(a==="flip"){S.flip=S.flip===false;save();sheet.close();render();return}
+  if(a==="mat"){S.mat=(S.mat||"1")==="1"?"2":"1";save();render();return}
+  if(a==="untap"){mut(()=>S.board.forEach(x=>{const c=cardOf(x.id);if(c.owner===S.turn)c.tapped=false}));sheet.close()}
+  if(a==="newgame"){sheet.close();store.set("jogo",null);location.reload()}
+  if(a==="newconfirm")openSheet(`<h2>Nova partida?</h2><p class="note" style="margin:0">A partida atual será apagada deste aparelho.</p><div class="row"><button class="btn" data-sh="newgame" type="button">Apagar e começar outra</button><button class="btn ghost" data-sh="close" type="button">Cancelar</button></div>`);
+});
+$("menubtn").addEventListener("click",()=>{
+  openSheet(`<h2>Mais opções</h2>
+    <div class="row"><button class="btn ghost" data-sh="untap" type="button">Desvirar minhas cartas</button><button class="btn ghost" data-sh="mat" type="button">Trocar tapete</button><button class="btn ghost" data-sh="flip" type="button">${S.flip===false?"Ligar":"Desligar"} o giro do campo na troca de vez</button></div>
+    <div class="row"><button class="btn ghost" data-sh="newconfirm" type="button">Nova partida</button><button class="btn ghost" data-sh="close" type="button">Fechar</button></div>`);
+  sheet._ctx={};
+});
+function tokenThumb(slug,label){return `<button class="thumb tok" data-sh="token" data-slug="${slug}" type="button" title="${esc(label)}"><img src="img/${slug}.webp" alt="" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'fallback',textContent:${JSON.stringify(label)}}))"><span class="toklab">${esc(label)}</span></button>`}
+function openTokens(q){
+  const who=esc(S.players[S.turn].name);
+  const nq=(q||"").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+  const found=nq.length>1?CARDS.filter(c=>(c.p+" "+c.n).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").includes(nq)).slice(0,24):[];
+  openSheet(`<h2>Fichas e coleção</h2>
+    <p class="note" style="margin:0">Toque numa ficha para colocá-la no reino, do lado de ${who}. Depois é só arrastar.</p>
+    <div class="thumbs">${TOKENS.map(([s,n])=>tokenThumb(s,n)).join("")}</div>
+    <label class="note" for="tokq" style="margin:0">Cartas da coleção (por exemplo Carniçal, Cães do Inferno, Híbridos Horrendos):</label>
+    <input id="tokq" type="search" placeholder="Buscar carta pelo nome" value="${esc(q||"")}" style="font:inherit;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)">
+    <div class="thumbs" id="tokres">${found.map(c=>tokenThumb(c.s,c.p)).join("")}</div>
+    <div class="row"><button class="btn ghost" data-sh="close" type="button">Fechar</button></div>`);
+  sheet._ctx={};
+  const inp=$("tokq"); inp.addEventListener("input",()=>{
+    const v=inp.value.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+    $("tokres").innerHTML=v.length>1?CARDS.filter(c=>(c.p+" "+c.n).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").includes(v)).slice(0,24).map(c=>tokenThumb(c.s,c.p)).join(""):"";
+  });
+  if(q)inp.focus();
+}
+$("tokbtn").addEventListener("click",()=>openTokens(""));
+function zoom(id){
+  const c=cardOf(id), i=info(c);
+  openSheet(`<div class="zoom"><div>${imgTag(c)}</div><div><div class="pt">${esc(i?i.p:"Carta")}</div><div class="en">${esc(i?i.n:"")}</div><p class="text">${i&&i.t?linkKw(i.t):"Sem efeito."}</p>${i&&i.e?`<details><summary>Texto em inglês</summary><p class="text">${esc(i.e)}</p></details>`:""}</div></div><div class="row"><button class="btn ghost" data-sh="close" type="button">Fechar</button></div>`);
+  sheet._ctx={};
+}
+
+/* keyword meanings: hover with the mouse, tap on touch; never leaves the table */
+const tip=$("tip"); let tipFor=null;
+function hideTip(){tip.hidden=true;if(tipFor)tipFor.classList.remove("on");tipFor=null}
+function showTip(k){
+  const g=GLOSS.find(x=>x.id===k.dataset.g); if(!g)return;
+  const host=sheet.open?sheet:document.body; if(tip.parentNode!==host)host.appendChild(tip);
+  tip.innerHTML=`<strong>${esc(g.pt.replace(/\n/g," · "))}</strong>${esc(g.d)}`;
+  tip.hidden=false; if(tipFor)tipFor.classList.remove("on"); tipFor=k; k.classList.add("on");
+  const r=k.getBoundingClientRect(), tw=tip.offsetWidth, th=tip.offsetHeight;
+  let x=Math.min(Math.max(8,r.left),window.innerWidth-tw-8), y=r.bottom+6;
+  if(y+th>window.innerHeight-8) y=Math.max(8,r.top-th-6);
+  tip.style.left=x+"px"; tip.style.top=y+"px";
+}
+document.addEventListener("pointerover",e=>{if(e.pointerType!=="mouse")return;const k=e.target.closest&&e.target.closest(".kw");if(k){if(tipFor!==k)showTip(k)}else if(tipFor)hideTip()});
+document.addEventListener("click",e=>{const k=e.target.closest&&e.target.closest(".kw");if(k){e.preventDefault();e.stopPropagation();if(tipFor===k)hideTip();else showTip(k)}else if(tipFor)hideTip()},true);
+document.addEventListener("scroll",()=>{if(tipFor)hideTip()},true);
+sheet.addEventListener("close",hideTip);
+
+/* turn passing */
+$("passbtn").addEventListener("click",()=>{snapshot();S.turn=1-S.turn;if(S.turn===0)S.round++;sel=null;placing=false;save();showCover()});
+function showCover(){handHidden=true;render();$("covertitle").textContent=`Vez de ${S.players[S.turn].name}`;$("cover").hidden=false}
+$("coverbtn").addEventListener("click",()=>{$("cover").hidden=true;handHidden=false;render()});
+$("showhand").addEventListener("click",()=>{handHidden=false;render()});
+$("undobtn").addEventListener("click",()=>{if(!undoStack.length)return;S=JSON.parse(undoStack.pop());if(sel&&!S.cards[sel])sel=null;placing=false;commit()});
+
+/* ---------- pointer: board ---------- */
+function boardPos(ev){const r=$("board").getBoundingClientRect();
+  const fx=(ev.clientX-r.left)/r.width, fy=(ev.clientY-r.top)/r.height;
+  let x=(fx-VL())/G.w*5, y=(fy-VT())/G.h*4; if(FLIP){x=5-x;y=4-y}
+  return {x:Math.min(6,Math.max(-1,x)),y:Math.min(5,Math.max(-1,y)),inside:fx>=0&&fx<=1&&fy>=0&&fy<=1}}
+function zoneAt(ev){for(const el of document.querySelectorAll("#board .zone")){const r=el.getBoundingClientRect();if(ev.clientX>=r.left&&ev.clientX<=r.right&&ev.clientY>=r.top&&ev.clientY<=r.bottom)return el}return null}
+function dropOnZone(id,zel){ /* a card always goes to its owner's pile of that kind */
+  const c=cardOf(id); let z=zel.dataset.z; if(z==="atlas"||z==="book")z=deckZoneOf(c);
+  mut(()=>moveTo(id,z)); if(!S.cards[id]||cardOf(id).zone!=="board")sel=null; render();
+}
+function placeAt(id,pos){
+  const c=cardOf(id), p=snap(c,pos,id);
+  mut(()=>{ if(c.zone==="board"){const b=S.board.find(b=>b.id===id);b.x=p.x;b.y=p.y;S.board=S.board.filter(x=>x!==b).concat([b])} else moveTo(id,"board",p) });
+}
+let hiEl=null;
+function highlight(ev,c){ /* show where a dragged card will land */
+  const B=$("board"); if(!hiEl){hiEl=document.createElement("div");hiEl.className="cellhi"}
+  document.querySelectorAll("#board .zone.hit").forEach(z=>z.classList.remove("hit"));
+  const z=zoneAt(ev); if(z){z.classList.add("hit");hiEl.remove();return}
+  const p=boardPos(ev); if(!p.inside||!inGrid(p)){hiEl.remove();return}
+  const cw=B.clientWidth*G.w/5;
+  hiEl.style.cssText=`left:${pctX(Math.floor(p.x)+.5)}%;top:${pctY(Math.floor(p.y)+.5)}%;width:${cw*.96}px;height:${cw*.96}px`;
+  if(hiEl.parentNode!==B)B.appendChild(hiEl);
+}
+function clearHi(){if(hiEl)hiEl.remove();document.querySelectorAll("#board .zone.hit").forEach(z=>z.classList.remove("hit"))}
+let drag=null;
+$("board").addEventListener("pointerdown",e=>{
+  const zel=e.target.closest(".zone"), el=e.target.closest(".bc");
+  const canMoveSel=sel&&S.cards[sel]&&(placing||cardOf(sel).zone==="hand"||(cardOf(sel).zone==="board"&&e.pointerType!=="mouse"));
+  if(zel&&!el){ if(canMoveSel){placing=false;dropOnZone(sel,zel)} else openPile(+zel.dataset.p,zel.dataset.z); return }
+  if(!el){ /* tap on an empty spot: place or move the selected card there */
+    if(!canMoveSel){ if(sel){sel=null;render()} return }
+    placing=false; placeAt(sel,boardPos(e)); render(); return;
+  }
+  drag={id:el.dataset.id,el,sx:e.clientX,sy:e.clientY,moved:false};
+  el.setPointerCapture(e.pointerId);
+});
+$("board").addEventListener("pointermove",e=>{
+  if(!drag)return;
+  if(!drag.moved&&Math.hypot(e.clientX-drag.sx,e.clientY-drag.sy)<6)return;
+  drag.moved=true; drag.el.classList.add("dragging");
+  const p=boardPos(e); drag.el.style.left=pctX(p.x)+"%"; drag.el.style.top=pctY(p.y)+"%"; if(!drag.el.classList.contains("site"))drag.el.style.zIndex=950;
+  highlight(e,cardOf(drag.id));
+});
+function endBoardDrag(e){
+  if(!drag)return; const d=drag; drag=null; clearHi();
+  if(!d.moved){ sel=(sel===d.id&&!placing)?null:d.id; placing=false; render(); return }
+  const zel=zoneAt(e); if(zel){dropOnZone(d.id,zel);return}
+  placeAt(d.id,boardPos(e));
+}
+$("board").addEventListener("pointerup",endBoardDrag);
+$("board").addEventListener("pointercancel",()=>{drag=null;clearHi();render()});
+
+/* ---------- pointer: hand ---------- */
+let hdrag=null;
+$("hand").addEventListener("pointerdown",e=>{
+  const el=e.target.closest(".hc"); if(!el||handHidden)return;
+  hdrag={id:el.dataset.id,el,sx:e.clientX,sy:e.clientY,ghost:null,pid:e.pointerId};
+});
+$("hand").addEventListener("pointermove",e=>{
+  if(!hdrag)return;
+  const dx=e.clientX-hdrag.sx, dy=e.clientY-hdrag.sy;
+  if(!hdrag.ghost){
+    if(dy>-12||Math.abs(dy)<Math.abs(dx))return;     /* only an upward drag picks the card up; sideways scrolls the hand */
+    hdrag.el.setPointerCapture(hdrag.pid);
+    const g=hdrag.el.cloneNode(true); g.style.cssText=`position:fixed;z-index:3000;pointer-events:none;width:${hdrag.el.offsetWidth}px;opacity:.9`;
+    document.body.appendChild(g); hdrag.ghost=g;
+  }
+  hdrag.ghost.style.left=(e.clientX-hdrag.ghost.offsetWidth/2)+"px"; hdrag.ghost.style.top=(e.clientY-hdrag.ghost.offsetHeight/2)+"px";
+  highlight(e,cardOf(hdrag.id));
+});
+function endHandDrag(e){
+  if(!hdrag)return; const d=hdrag; hdrag=null;
+  if(d.ghost){d.ghost.remove(); clearHi(); placing=false;
+    const zel=zoneAt(e); if(zel){dropOnZone(d.id,zel);return}
+    const pos=boardPos(e); if(pos.inside){sel=d.id; placeAt(d.id,pos); render()}
+    return}
+  if(Math.hypot(e.clientX-d.sx,e.clientY-d.sy)<8){ sel=(sel===d.id)?null:d.id; placing=false; render() }
+}
+$("hand").addEventListener("pointerup",endHandDrag);
+$("hand").addEventListener("pointercancel",()=>{if(hdrag&&hdrag.ghost)hdrag.ghost.remove();hdrag=null;clearHi()});
+
+/* ---------- boot ---------- */
+Promise.all([fetch("data/cards.json").then(r=>r.json()),fetch("data/decks.json").then(r=>r.json())]).then(([c,d])=>{
+  CARDS=c;DECKS=d;CARDS.forEach(x=>{BYSLUG[x.s]=x;BYNAME[x.n]=x});
+  const opts=Object.keys(DECKS).map(k=>`<option value="${k}">${DECK_PT[k]||k}</option>`).join("");
+  $("d0").innerHTML=opts;$("d1").innerHTML=opts;$("d1").value="beta-fire";$("d0").value="beta-earth";
+  $("startbtn").disabled=false;$("startbtn").textContent="Começar partida";
+  const saved=store.get("jogo",null);
+  if(saved&&saved.v===1){$("resume").hidden=false;$("resumeinfo").textContent=`${saved.players[0].name} contra ${saved.players[1].name}, rodada ${saved.round}`}
+}).catch(()=>{$("startbtn").textContent="Não consegui carregar as cartas"});
+$("startbtn").addEventListener("click",newGame);
+$("resumebtn").addEventListener("click",()=>{S=store.get("jogo",null);if(S)startGame(true)});
+if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(()=>{})}
+</script>
+</body>
+</html>

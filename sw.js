@@ -1,5 +1,5 @@
-const C="grimorio-v2";
-const CORE=["./","index.html","manifest.json","icon-192.png","icon-512.png","data/cards.json","data/decks.json"];
+const C="grimorio-v3";
+const CORE=["./","index.html","manifest.json","icon-192.png","icon-512.png","data/cards.json","data/decks.json","jogar.html"];
 self.addEventListener("install",e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(CORE)));self.skipWaiting()});
 self.addEventListener("activate",e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==C).map(x=>caches.delete(x)))));self.clients.claim()});
 self.addEventListener("fetch",e=>{
