@@ -128,6 +128,8 @@ dialog::backdrop{background:rgba(10,12,14,.55)}
 .sheet h2{font-family:var(--f-display);font-weight:400;margin:0;font-size:1.4rem}
 .sheet .row{display:flex;gap:8px;flex-wrap:wrap}
 .thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:8px;max-height:52dvh;overflow:auto}
+.thumb.picked{outline:3px solid var(--gold);outline-offset:1px}
+.pickrow{align-items:center;background:var(--bg);border-radius:10px;padding:8px}
 .thumb{position:relative;aspect-ratio:63/88;border-radius:5px;overflow:hidden;cursor:pointer;border:0;padding:0;background:var(--bg)}
 .thumb img{width:100%;height:100%;object-fit:cover;display:block}
 .thumb .toklab{position:absolute;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);color:#fff;font-size:.68rem;padding:1px 3px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -469,8 +471,8 @@ $("strip0").addEventListener("click",stripClick); $("strip1").addEventListener("
 const sheet=$("sheet");
 function openSheet(html){$("sheetbody").innerHTML=html;if(!sheet.open)sheet.showModal()}
 sheet.addEventListener("click",e=>{if(e.target===sheet)sheet.close()});
-function thumbs(ids,numbered){return `<div class="thumbs">${ids.map((id,k)=>{const c=cardOf(id);return `<button class="thumb" data-pick="${id}" type="button">${imgTag(c)}${numbered?`<span class="pos">${k+1}</span>`:""}</button>`}).join("")||`<span class="empty">Vazio.</span>`}</div>`}
-function openPile(p,z,peek){
+function thumbs(ids,numbered,picked){return `<div class="thumbs">${ids.map((id,k)=>{const c=cardOf(id);return `<button class="thumb ${picked===id?"picked":""}" data-pick="${id}" type="button">${imgTag(c)}${numbered?`<span class="pos">${k+1}</span>`:""}</button>`}).join("")||`<span class="empty">Vazio.</span>`}</div>`}
+function openPile(p,z,peek,pick,msg){
   const pl=S.players[p];
   const T={atlas:"Atlas",book:"Grimório",grave:"Cemitério",banish:"Banidas"}[z];
   const l=pl[z];
@@ -483,18 +485,31 @@ function openPile(p,z,peek){
         <button class="btn ghost" data-sh="shuffle" type="button">Embaralhar</button>
         <button class="btn ghost" data-sh="close" type="button">Fechar</button>
       </div>
-      ${peek?`<p class="note" style="margin:0">${peek==="all"?"Na ordem do monte, de cima para baixo. Toque numa carta para mexer nela.":"As 3 de cima, na ordem. Toque numa carta para mexer nela."}</p>${thumbs(peek==="all"?l:l.slice(0,3),true)}`:""}`);
+      ${msg?`<p class="note" style="margin:0;color:var(--ink)">${esc(msg)}</p>`:""}
+      ${peek?`<p class="note" style="margin:0">${peek==="all"?"Na ordem do monte, de cima para baixo. Toque numa carta para escolher.":"As 3 de cima, na ordem. Toque numa carta para escolher."}</p>
+      ${pick&&l.includes(pick)?`<div class="row pickrow"><b style="align-self:center">${esc(info(cardOf(pick))?info(cardOf(pick)).p:"Carta")}</b>
+        <button class="btn" data-sh="take" type="button">Pegar para a mão</button>
+        <button class="btn ghost" data-sh="takeboard" type="button">Pôr no reino</button>
+        <button class="btn ghost" data-sh="takezoom" type="button">Ampliar</button>
+        <button class="btn ghost" data-sh="unpick" type="button">Cancelar</button></div>`:""}
+      ${thumbs(peek==="all"?l:l.slice(0,3),true,pick)}`:""}`);
   }else{
     openSheet(`<h2>${T} de ${esc(pl.name)} · ${l.length}</h2><p class="note" style="margin:0">Toque numa carta para mexer nela.</p>${thumbs(l,false)}<div class="row"><button class="btn ghost" data-sh="close" type="button">Fechar</button></div>`);
   }
-  sheet._ctx={p,z};
+  sheet._ctx={p,z,peek,pick};
 }
 $("sheetbody").addEventListener("click",e=>{
   const b=e.target.closest("[data-sh]"), t=e.target.closest("[data-pick]"), ctx=sheet._ctx||{};
-  if(t){sel=t.dataset.pick;placing=false;sheet.close();render();return}
+  if(t){
+    if((ctx.z==="atlas"||ctx.z==="book")&&ctx.peek){openPile(ctx.p,ctx.z,ctx.peek,t.dataset.pick);return}   /* searching a deck: choose, then act */
+    sel=t.dataset.pick;placing=false;sheet.close();render();return}
   if(!b)return;
   const a=b.dataset.sh;
   if(a==="close")sheet.close();
+  if(a==="unpick")openPile(ctx.p,ctx.z,ctx.peek);
+  if(a==="take"&&ctx.pick){const nm=info(cardOf(ctx.pick))?info(cardOf(ctx.pick)).p:"A carta";mut(()=>moveTo(ctx.pick,"hand",{bottom:true}));openPile(ctx.p,ctx.z,ctx.peek,null,`${nm} foi para a mão de ${S.players[ctx.p].name}. Se a carta pedir, embaralhe o monte.`)}
+  if(a==="takeboard"&&ctx.pick){sel=ctx.pick;placing=true;sheet.close();render()}
+  if(a==="takezoom"&&ctx.pick)zoom(ctx.pick);
   if(a==="draw"){snapshot();draw(ctx.p,ctx.z);sheet.close()}
   if(a==="peek3")openPile(ctx.p,ctx.z,"3");
   if(a==="all")openPile(ctx.p,ctx.z,"all");
