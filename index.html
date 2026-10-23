@@ -297,7 +297,7 @@ summary{cursor:pointer;color:var(--muted);font-size:.9rem}
 
   <section id="v-glossario" class="prose" hidden>
     <h2>Glossário</h2>
-    <p>Os termos que aparecem nas cartas, em todas as coleções. Nas cartas, toque ou clique numa palavra sublinhada para vir direto para cá.</p>
+    <p>Os termos que aparecem nas cartas, em todas as coleções. Nas cartas, as palavras sublinhadas estão aqui: no computador, passe o mouse para ver o significado e clique para vir até este glossário; no celular, toque uma vez para ver e de novo para vir até aqui.</p>
     <div class="tablewrap"><table id="gloss"><thead><tr><th>Termo</th><th>Na carta (inglês)</th><th>O que faz</th></tr></thead><tbody></tbody></table></div>
   </section>
 </main>
@@ -488,26 +488,40 @@ function linkKw(text){
   });
 }
 const tip=document.getElementById("tip");
-function hideTip(){tip.hidden=true}
-document.addEventListener("pointerover",e=>{
-  const k=e.target.closest&&e.target.closest(".kw");
-  if(!k||e.pointerType!=="mouse"){if(!k)hideTip();return}
+let tipFor=null, tipTouch=false, lastPointer="mouse";
+function hideTip(){tip.hidden=true;tipFor=null}
+function showTip(k,touch){
   const g=GLOSS.find(x=>x.id===k.dataset.g); if(!g)return;
-  tip.innerHTML=`<strong>${esc(g.pt.replace(/\n/g," · "))}</strong>${esc(g.d)}<span class="tiphint">Clique para ver no glossário</span>`;
-  tip.hidden=false;
+  /* inside an open card the tip must live in the dialog to sit above it */
+  const host=dlg.open?dlg:document.body; if(tip.parentNode!==host)host.appendChild(tip);
+  tip.innerHTML=`<strong>${esc(g.pt.replace(/\n/g," · "))}</strong>${esc(g.d)}<span class="tiphint">${touch?"Toque de novo para ver no glossário":"Clique para ver no glossário"}</span>`;
+  tip.hidden=false; tipFor=k; tipTouch=!!touch;
   const r=k.getBoundingClientRect(), tw=tip.offsetWidth, th=tip.offsetHeight;
   let x=Math.min(Math.max(8,r.left),window.innerWidth-tw-8), y=r.bottom+6;
-  if(y+th>window.innerHeight-8) y=r.top-th-6;
+  if(y+th>window.innerHeight-8) y=Math.max(8,r.top-th-6);
   tip.style.left=x+"px"; tip.style.top=y+"px";
-});
-document.addEventListener("scroll",hideTip,true);
-document.addEventListener("click",e=>{
-  const k=e.target.closest&&e.target.closest(".kw"); if(!k)return;
-  e.stopPropagation(); e.preventDefault(); hideTip();
+}
+function goGloss(k){
+  hideTip();
   if(dlg.open) dlg.close();
   show("glossario");
   const row=document.getElementById("g-"+k.dataset.g);
   if(row){row.scrollIntoView({block:"center"});row.classList.remove("flash");void row.offsetWidth;row.classList.add("flash")}
+}
+document.addEventListener("pointerdown",e=>{lastPointer=e.pointerType||"mouse"},true);
+document.addEventListener("pointerover",e=>{
+  if(e.pointerType!=="mouse")return;
+  const k=e.target.closest&&e.target.closest(".kw");
+  if(k){if(tipFor!==k)showTip(k,false)}else if(tipFor)hideTip();
+});
+document.addEventListener("scroll",()=>{if(tipFor)hideTip()},true);
+dlg.addEventListener("close",hideTip);
+document.addEventListener("click",e=>{
+  const k=e.target.closest&&e.target.closest(".kw");
+  if(!k){ if(tipFor&&lastPointer!=="mouse"){hideTip();e.stopPropagation();e.preventDefault()} return }
+  e.stopPropagation(); e.preventDefault();
+  if(lastPointer==="mouse"||(tipFor===k&&tipTouch)) goGloss(k);   /* mouse: click goes to glossary; touch: second tap */
+  else showTip(k,true);                               /* touch: first tap shows the meaning */
 },true);
 
 /* table counters */
