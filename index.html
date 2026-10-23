@@ -84,7 +84,16 @@ main{padding-block:16px 60px}
 table{border-collapse:collapse;width:100%;font-size:.95rem}
 th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
 th{font-size:.76rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
-td:first-child{font-weight:500;white-space:nowrap}
+#gloss td{white-space:pre-line}
+#gloss .gpt{font-weight:600}
+#gloss .gen{color:var(--muted)}
+#gloss tr.flash td{animation:flash 1.6s ease}
+@keyframes flash{0%,40%{background:color-mix(in srgb,var(--gold) 28%,transparent)}100%{background:transparent}}
+.kw{text-decoration:underline dotted color-mix(in srgb,var(--gold) 70%,transparent);text-underline-offset:3px;cursor:help}
+.kw:hover{color:var(--gold)}
+#tip{position:fixed;z-index:50;max-width:min(280px,calc(100vw - 16px));background:var(--ink);color:var(--bg);border-radius:8px;padding:8px 10px;font-size:.88rem;line-height:1.35;box-shadow:var(--shadow);pointer-events:none}
+#tip strong{display:block;margin-bottom:2px}
+#tip .tiphint{display:block;margin-top:4px;opacity:.7;font-size:.78rem}
 .btn{font:inherit;background:var(--ink);color:var(--bg);border:0;border-radius:8px;padding:8px 14px;cursor:pointer}
 .btn.ghost{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
 .btn.danger{background:var(--danger);color:#fff}
@@ -129,7 +138,7 @@ summary{cursor:pointer;color:var(--muted);font-size:.9rem}
 .el .n{font-family:var(--f-mono);font-weight:600;font-size:1.15rem;min-width:1.4em;text-align:center;font-variant-numeric:tabular-nums}
 .el button{font:inherit;width:28px;height:28px;border-radius:8px;border:0;background:var(--surface);color:var(--ink);cursor:pointer;touch-action:manipulation}
 .confirm{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 12px}
-@media (max-width:640px){.dlg{grid-template-columns:1fr}.grid{grid-template-columns:1fr}.board{height:calc(100dvh - 210px)}.p4 .el button{width:22px;height:24px}.p4 .el .n{font-size:.95rem}.p4 .els{gap:3px}}
+@media (max-width:640px){#gloss thead{display:none}#gloss,#gloss tbody,#gloss tr,#gloss td{display:block}#gloss tr{padding:10px 0;border-bottom:1px solid var(--line)}#gloss td{border:0;padding:1px 0}.dlg{grid-template-columns:1fr}.grid{grid-template-columns:1fr}.board{height:calc(100dvh - 210px)}.p4 .el button{width:22px;height:24px}.p4 .el .n{font-size:.95rem}.p4 .els{gap:3px}}
 @media (prefers-reduced-motion:no-preference){.card{transition:transform .15s ease}.card:hover{transform:translateY(-2px)}}
 </style>
 
@@ -256,14 +265,40 @@ summary{cursor:pointer;color:var(--muted);font-size:.9rem}
       <li>Próximo: o mesmo quadrado e os 8 em volta, contando diagonais.</li>
       <li>Aqui: o mesmo quadrado.</li>
     </ul>
+    <h3>Camadas: superfície, subsolo e água</h3>
+    <ul>
+      <li>Normalmente tudo acontece na superfície, em cima dos terrenos.</li>
+      <li>Unidades com Escavador podem descer para o subsolo de terrenos de terra; com Submergir, podem ficar embaixo d'água em terrenos de água.</li>
+      <li>Quem está numa camada só luta com quem está na mesma. Algumas cartas puxam unidades para baixo (Enterrar, Afogar) ou trazem de volta.</li>
+      <li>Voadores ficam acima do chão e passam por cima de quem está nele.</li>
+    </ul>
+    <h3>Artefatos e portadores</h3>
+    <ul>
+      <li>Um artefato é carregado por uma unidade, o portador, e vai junto com ela.</li>
+      <li>Unidades podem pegar ou largar artefatos no local onde estão. O que é largado fica ali.</li>
+    </ul>
+    <h3>Fichas</h3>
+    <p>Algumas cartas criam fichas que não vêm no baralho: Soldado, Esqueleto, Sapo, Lança e Escombros. Use moedas, dados ou qualquer marcador. Quando uma ficha sai do jogo, ela simplesmente some.</p>
+    <h3>Proteção (Gothic)</h3>
+    <p>Uma Proteção é uma barreira de uso único num lacaio ou terreno. Ela absorve o primeiro dano, uma destruição ou um feitiço ou habilidade que escolha a carta como alvo, e então quebra. Muitas cartas sagradas do Gothic dão Proteção; outras quebram ou roubam Proteções.</p>
+    <h3>Maligno (Gothic)</h3>
+    <p>Algumas cartas são Malignas (Evil), como muitos Demônios e Mortos-vivos. Várias cartas sagradas causam mais efeito contra elas, e o Avatar Perseguidor pode marcar inimigos como Malignos.</p>
     <h3>Coleção</h3>
-    <p>Algumas cartas do Gothic e do Arthurian Legends buscam cartas “da sua coleção”: são cartas que você tem guardadas fora do deck, separadas antes da partida.</p>
+    <p>Algumas cartas do Gothic e do Arthurian Legends buscam cartas “da sua coleção”: são cartas suas guardadas fora do deck, separadas antes da partida. Nos decks prontos do Gothic, a lista oficial indica quais são (por exemplo, o Necromante usa 2 Carniçais da coleção).</p>
+    <h3>Última linha e bordas</h3>
+    <p>A última linha é a linha do tabuleiro mais perto de você. Algumas cartas do Arthurian Legends só funcionam ali. Os cantos e as colunas das bordas também aparecem em várias cartas do Gothic.</p>
+    <h3>Montando o próprio deck</h3>
+    <ul>
+      <li>1 Avatar, um Atlas com pelo menos 30 terrenos e um Grimório com pelo menos 60 feitiços.</li>
+      <li>Limite de cópias pela raridade: até 4 de cada Comum, 3 de cada Excepcional, 2 de cada Elite e 1 de cada Único.</li>
+      <li>Os decks prontos (16 terrenos e 36 feitiços) são menores, feitos para aprender e jogar entre eles.</li>
+    </ul>
   </section>
 
   <section id="v-glossario" class="prose" hidden>
     <h2>Glossário</h2>
-    <p>Palavras que aparecem em inglês nas cartas.</p>
-    <div class="tablewrap"><table id="gloss"><thead><tr><th>Na carta</th><th>Em português</th><th>O que faz</th></tr></thead><tbody></tbody></table></div>
+    <p>Os termos que aparecem nas cartas, em todas as coleções. Nas cartas, toque ou clique numa palavra sublinhada para vir direto para cá.</p>
+    <div class="tablewrap"><table id="gloss"><thead><tr><th>Termo</th><th>Na carta (inglês)</th><th>O que faz</th></tr></thead><tbody></tbody></table></div>
   </section>
 </main>
 
@@ -271,52 +306,75 @@ summary{cursor:pointer;color:var(--muted);font-size:.9rem}
   <button class="close" id="dlgclose" aria-label="Fechar">×</button>
   <div class="dlg"><div class="art" id="dart"></div><div class="info" id="dinfo"></div></div>
 </div></dialog>
+<div id="tip" role="tooltip" hidden></div>
 
 <script>
+/* Glossário: id, termo em português, termo na carta (inglês), explicação, padrão que liga o termo no texto das cartas, e se o padrão exige maiúscula. */
 const GLOSS = [
-["Airborne","Voador","Pode andar na diagonal e voa por cima do que está no chão."],
-["Ally / Enemy","Aliado / Inimigo","Suas unidades / unidades do oponente."],
-["Banish","Banir","Remove do jogo; não vai pro cemitério."],
-["Bearer","Portador","A unidade que carrega um artefato."],
-["Body of water","Corpo d'água","Grupo de terrenos de água encostados uns nos outros."],
-["Burrowing","Escavador","Pode descer para baixo do terreno (subsolo) e andar por lá."],
-["Charge","Investida","Pode agir no mesmo turno em que foi invocado."],
-["Collection","Coleção","Suas cartas fora do deck que algumas cartas podem buscar."],
-["Conjure","Criar","Coloca no jogo sem conjurar da mão."],
-["Death's Door","Portas da morte","Avatar com 0 de vida; o próximo dano direto o derrota."],
-["Deathrite","Rito de morte","Efeito que acontece quando a carta morre."],
-["Disabled","Desabilitado","Não pode virar, agir nem golpear."],
-["Dispel","Dissipar","Remove uma aura."],
-["Evil","Maligno","Demônios, Mortos-vivos e outras cartas marcadas como Evil."],
-["Flood / Flooded","Inundar / Inundado","O terreno passa a contar como terreno de água."],
-["Foot Soldier","Soldado","Ficha de lacaio 1/1."],
-["Genesis","Gênese","Efeito que acontece quando a carta entra em jogo."],
-["Immobile","Imóvel","Não pode se mover."],
-["Lance","Lança","Ficha que dá +1 de dano e golpe primeiro no próximo golpe, depois quebra."],
-["Landbound","Preso à terra","Só pode ficar em terreno que não seja de água."],
-["Lethal","Letal","Qualquer dano dele mata um lacaio."],
-["Movement +X","Movimento +X","Anda X passos a mais quando se move."],
-["Ordinary · Exceptional · Elite · Unique","Comum · Excepcional · Elite · Único","As quatro raridades, da mais comum à mais rara."],
-["Piercing","Perfurante","O projétil atravessa e acerta todos no caminho."],
-["Projectile","Projétil","Disparo em linha reta numa direção; acerta a primeira unidade no caminho."],
-["Random","Aleatório","Sorteado (dado ou cartas viradas)."],
-["Ranged","À distância","Ataca uma unidade a 1 passo sem se mover."],
-["Rubble","Escombros","Ficha de terreno sem mana e sem elemento."],
-["Silenced","Silenciado","Perde as habilidades enquanto estiver assim."],
-["Skeleton","Esqueleto","Ficha de lacaio Morto-vivo."],
-["Spellcaster","Conjurador","Pode conjurar magias a partir de onde está."],
-["Stealth","Furtivo","Não pode ser alvo nem interceptado pelo inimigo até atacar."],
-["Step","Passo","Um quadrado."],
-["Strike","Golpear","Causar dano igual ao próprio poder."],
-["Submerge","Submergir","Em terreno de água, pode ficar submerso."],
-["Tap / Untap","Virar / Desvirar","Deitar a carta para usar / levantar de volta."],
-["Teleport","Teletransportar","Ir direto ao destino, sem passar pelo caminho."],
-["Undead","Morto-vivo","Tipo de lacaio; vários são Malignos."],
-["Void","Vazio","Quadrado sem terreno."],
-["Voidwalk","Andar no vazio","Pode entrar e ficar em quadrados vazios."],
-["Ward / Warded","Proteção / Protegido","Uma barreira de uso único num lacaio ou terreno. Absorve o primeiro dano, uma destruição ou um feitiço ou habilidade que o escolha como alvo, e então quebra."],
-["Waterbound","Preso à água","Só pode ficar em terreno de água."],
-["① ②","Mana","Número dentro do círculo: quanto de mana pagar."]];
+{id:"adjacente",pt:"Adjacente",en:"Adjacent",d:"Os quadrados vizinhos de lado: cima, baixo, esquerda e direita. Diagonal não conta.",re:"adjacentes?"},
+{id:"aleatorio",pt:"Aleatório",en:"Random",d:"Sorteado, com dado ou com cartas viradas para baixo.",re:"aleatóri[oa]s?"},
+{id:"aliado",pt:"Aliado / Inimigo",en:"Ally / Enemy",d:"Aliado é o que você controla; inimigo é o que o oponente controla.",re:null},
+{id:"andarvazio",pt:"Andar no vazio",en:"Voidwalk",d:"Pode entrar e ficar em quadrados vazios, sem terreno.",re:"andar no vazio"},
+{id:"atlas",pt:"Atlas",en:"Atlas",d:"O monte de terrenos do jogador.",re:"atlas"},
+{id:"banir",pt:"Banir",en:"Banish",d:"Remove a carta do jogo. Ela não vai para o cemitério.",re:"ban(?:a|ir|ido|idos|ida|idas|indo|e|em|ia)"},
+{id:"carregar",pt:"Carregar, pegar e largar",en:"Carry, pick up, drop",d:"Unidades levam artefatos (e às vezes outros lacaios) consigo. Podem pegar ou largar o que está no mesmo local; o que é largado fica ali.",re:"carreg(?:ar|a|am|ado|ados|ada|ando|ue)|larg(?:ar|a|am|ada|ado|á-la|á-lo)|pegar?|pega"},
+{id:"cemiterio",pt:"Cemitério",en:"Cemetery",d:"A pilha de descarte de cada jogador: lacaios mortos, magias usadas, cartas destruídas.",re:"cemitérios?"},
+{id:"colecao",pt:"Coleção",en:"Collection",d:"Cartas suas guardadas fora do deck, separadas antes da partida, que algumas cartas podem buscar.",re:"coleç(?:ão|ões)"},
+{id:"conjurador",pt:"Conjurador",en:"Spellcaster",d:"Pode conjurar magias a partir de onde está. O Avatar sempre é conjurador. “Conjurador de Fogo” só conjura magias de Fogo.",re:"conjurador(?:es)?(?: de (?:Ar|Terra|Fogo|Água)(?: e (?:Ar|Terra|Fogo|Água))?)?"},
+{id:"conjurar",pt:"Conjurar",en:"Cast",d:"Jogar um feitiço da mão pagando o custo de mana e tendo o limiar.",re:"conjur(?:ar|a|e|ado|ados|ada|adas|ou|am|arem|ar\\w*)"},
+{id:"corpoagua",pt:"Corpo d'água",en:"Body of water",d:"Um grupo de terrenos de água encostados uns nos outros.",re:"corpo d'água"},
+{id:"criar",pt:"Criar",en:"Conjure",d:"Colocar algo no jogo direto, sem conjurar da mão (por exemplo, criar uma aura ou um artefato).",re:"cri(?:ar|e|ado|ada|a)"},
+{id:"defender",pt:"Defender",en:"Defend",d:"Quando um inimigo ataca, suas unidades desviradas no local ou adjacentes podem entrar na luta no lugar do alvo.",re:"defend(?:er|e|em|ida|idas|ido|endo)"},
+{id:"desabilitado",pt:"Desabilitado",en:"Disabled",d:"Não pode virar, agir, se mover nem golpear enquanto estiver assim.",re:"desabilit\\w*"},
+{id:"direcaoreta",pt:"Direção reta",en:"Cardinal direction",d:"Para cima, para baixo, para a esquerda ou para a direita. Diagonal não conta.",re:"direç(?:ão|ões) retas?"},
+{id:"dissipar",pt:"Dissipar",en:"Dispel",d:"Remover uma aura do tabuleiro.",re:"dissip(?:ar|e|a)"},
+{id:"escavador",pt:"Escavador",en:"Burrowing",d:"Pode descer para o subsolo, embaixo de um terreno de terra, e andar por lá.",re:"escavador(?:es)?"},
+{id:"escombros",pt:"Escombros",en:"Rubble",d:"Ficha de terreno sem mana e sem elemento.",re:"escombros"},
+{id:"esqueleto",pt:"Esqueleto",en:"Skeleton",d:"Ficha de lacaio Morto-vivo. Não pode se mover para defender.",re:"esqueletos?"},
+{id:"ferido",pt:"Ferido",en:"Wounded",d:"Lacaio que está com dano neste turno.",re:"ferid[oa]s?"},
+{id:"ficha",pt:"Ficha",en:"Token",d:"Carta ou marcador criado por efeitos, que não vem no baralho: Soldado, Esqueleto, Sapo, Escombros, Lança. Use moedas ou qualquer marcador.",re:"fichas?"},
+{id:"furtivo",pt:"Furtivo",en:"Stealth",d:"Não pode ser alvo nem interceptado pelo inimigo. Perde o Furtivo quando ataca ou quando um efeito o revela.",re:"furtiv[oa]s?"},
+{id:"genese",pt:"Gênese",en:"Genesis",d:"Efeito que acontece quando a carta entra em jogo.",re:"gêneses?"},
+{id:"golpear",pt:"Golpear",en:"Strike",d:"Causar dano igual ao próprio poder. No combate, os dois lados se golpeiam ao mesmo tempo.",re:"golpe(?:ar|ia|iam|ie|iem|á-lo|á-la|á-los|ou|s)?|golpeado"},
+{id:"golpeprimeiro",pt:"Golpear primeiro",en:"Strikes first",d:"No combate, golpeia antes do outro lado. Se matar o oponente, não leva o golpe de volta.",re:"golpeiam? primeiro"},
+{id:"grimorio",pt:"Grimório",en:"Spellbook",d:"O monte de feitiços do jogador: lacaios, magias, auras e artefatos.",re:"grimórios?"},
+{id:"imovel",pt:"Imóvel",en:"Immobile",d:"Não pode se mover.",re:"imóve(?:l|is)"},
+{id:"interceptar",pt:"Interceptar",en:"Intercept",d:"Quando um inimigo entra num local com unidades suas desviradas, elas podem pará-lo e lutar.",re:"intercept\\w*"},
+{id:"inundar",pt:"Inundar",en:"Flood",d:"O terreno passa a contar como terreno de água.",re:"inund\\w*"},
+{id:"investida",pt:"Investida",en:"Charge",d:"Pode agir no mesmo turno em que foi invocado.",re:"investida"},
+{id:"lanca",pt:"Lança",en:"Lance",d:"Ficha carregada como arma: o próximo golpe do portador contra unidades causa +1 de dano e acontece primeiro, depois a Lança quebra.",re:"lança"},
+{id:"letal",pt:"Letal",en:"Lethal",d:"Qualquer dano dele mata um lacaio.",re:"letal"},
+{id:"limiar",pt:"Limiar",en:"Threshold",d:"Os símbolos de elemento que um feitiço exige. Some os símbolos dos seus terrenos; precisa ter pelo menos aquela quantidade de cada um.",re:"limiar"},
+{id:"lutar",pt:"Lutar",en:"Fight",d:"Duas unidades se golpeiam ao mesmo tempo.",re:"lut(?:ar|a|am|arem|e|em|ou)"},
+{id:"maligno",pt:"Maligno",en:"Evil",d:"Cartas marcadas como Evil, como muitos Demônios e Mortos-vivos. Várias cartas sagradas do Gothic agem contra elas.",re:"malign[oa]s?|mal\\b",cs:1},
+{id:"mana",pt:"Mana",en:"Mana",d:"Cada terreno dá 1 de mana por turno. O número dentro do círculo (① ②) é quanto pagar.",re:null},
+{id:"mortovivo",pt:"Morto-vivo",en:"Undead",d:"Tipo de lacaio. Muitos são Malignos e voltam do cemitério.",re:"mortos?-vivos?"},
+{id:"movimento",pt:"Movimento +X",en:"Movement +X",d:"Anda X passos a mais quando se move.",re:"movimento \\+\\d"},
+{id:"passo",pt:"Passo",en:"Step",d:"Andar um quadrado para um local adjacente.",re:null},
+{id:"perfurante",pt:"Perfurante",en:"Piercing",d:"O projétil atravessa e acerta todos no caminho.",re:"perfurantes?"},
+{id:"portador",pt:"Portador",en:"Bearer",d:"A unidade que carrega um artefato.",re:"portador(?:es)?"},
+{id:"portasmorte",pt:"Portas da morte",en:"Death's Door",d:"Avatar com 0 de vida. Não pode mais se curar, e o próximo dano direto nele encerra o jogo.",re:"portas da morte"},
+{id:"preso",pt:"Preso à terra / à água",en:"Landbound / Waterbound",d:"Preso à terra: só fica em terrenos que não são de água. Preso à água: só fica em terrenos de água.",re:"preso à (?:terra|água)"},
+{id:"projetil",pt:"Projétil",en:"Projectile",d:"Disparo em linha reta numa direção. Acerta a primeira unidade no caminho.",re:"projéte?(?:il|is)"},
+{id:"protecao",pt:"Proteção",en:"Ward",d:"Barreira de uso único num lacaio ou terreno. Absorve o primeiro dano, uma destruição ou um feitiço ou habilidade que o escolha como alvo, e então quebra.",re:"proteç(?:ão|ões)|protegid[oa]s?|protej(?:a|am)|proteg(?:er|e)"},
+{id:"proximo",pt:"Próximo",en:"Nearby",d:"O mesmo quadrado e os 8 em volta, contando as diagonais.",re:"próxim[oa]s?(?! (?:turno|feitiço|feitiços|vez|ataque|golpe|Dragão|Fera|Maligno|lacaio|terreno|terrenos|jogador|cinco|três|quatro|seis|sete|dois|duas|magia|spell))"},
+{id:"distancia",pt:"À distância",en:"Ranged",d:"Ataca uma unidade a 1 passo sem se mover (ou mais longe, se tiver um número). Quem é atacado assim não golpeia de volta.",re:"à distância(?: \\d)?"},
+{id:"raridade",pt:"Comum\nExcepcional\nElite\nÚnico",en:"Ordinary\nExceptional\nElite\nUnique",d:"As quatro raridades, da mais comum à mais rara.",re:"comuns?|excepciona(?:l|is)|elite|únic[oa]s?",cs:1},
+{id:"ritomorte",pt:"Rito de morte",en:"Deathrite",d:"Efeito que acontece quando a carta morre.",re:"ritos? de morte"},
+{id:"sacrificar",pt:"Sacrificar",en:"Sacrifice",d:"Mandar uma carta sua para o cemitério por vontade própria, como custo de um efeito.",re:"sacrific\\w*"},
+{id:"sapo",pt:"Sapo",en:"Frog",d:"Ficha de lacaio 1 de poder com Submergir.",re:"sapos?",cs:1},
+{id:"silenciado",pt:"Silenciado",en:"Silenced",d:"Perde as habilidades enquanto estiver assim.",re:"silenci\\w*"},
+{id:"soldado",pt:"Soldado",en:"Foot Soldier",d:"Ficha de lacaio 1 de poder.",re:"soldados?"},
+{id:"submergir",pt:"Submergir",en:"Submerge",d:"Em terreno de água, pode ficar submerso, embaixo d'água. Unidades submersas só lutam com outras na mesma camada.",re:"submer\\w*"},
+{id:"subsolo",pt:"Subsolo e superfície",en:"Underground, surface",d:"O subsolo é a camada embaixo de um terreno de terra. A superfície é em cima dos terrenos. Quem está numa camada só interage com quem está na mesma.",re:"subsolo|superfície"},
+{id:"teletransportar",pt:"Teletransportar",en:"Teleport",d:"Ir direto ao destino, sem passar pelo caminho nem ser interceptado.",re:"teletransport\\w*"},
+{id:"tipos",pt:"Tipos de lacaio",en:"Mortal, Beast, Demon...",d:"Mortal, Fera, Demônio, Anjo, Dragão, Fada, Espírito, Gigante, Monstro, Morto-vivo e outros. Algumas cartas afetam só um tipo.",re:"mortais|mortal|feras?|demônios?|anjos?|dragões|dragão|fadas?|espíritos?|gigantes?|monstros?|autômatos?",cs:1},
+{id:"ultimalinha",pt:"Última linha",en:"Back row",d:"A linha do tabuleiro mais perto de você.",re:"última linha"},
+{id:"vazio",pt:"Vazio",en:"Void",d:"Quadrado sem terreno.",re:"vazios?"},
+{id:"virar",pt:"Virar / Desvirar",en:"Tap / Untap",d:"Virar é deitar a carta para usar (mover, atacar, habilidade com “Vire:”). Desvirar é levantar de volta, no início do seu turno.",re:"vire|virar|virad[oa]s?|vira-se|desvir\\w*"},
+{id:"voador",pt:"Voador",en:"Airborne",d:"Pode andar na diagonal e voa por cima do que está no chão.",re:"voador(?:es)?"},
+{id:"livremente",pt:"Se move livremente",en:"Moves freely",d:"Andar dessa forma não conta como passo do movimento normal.",re:"livremente"}
+];
 const TYPE_PT={Avatar:"Avatar",Minion:"Lacaio",Magic:"Magia",Aura:"Aura",Artifact:"Artefato",Site:"Terreno"};
 const RAR_PT={Ordinary:"Comum",Exceptional:"Excepcional",Elite:"Elite",Unique:"Único"};
 const SET_PT={"001":"Alpha","002":"Beta","004":"Arthurian Legends","005":"Dragonlord","006":"Gothic","999":"Promo"};
@@ -354,16 +412,16 @@ function current(){
 }
 function cardHTML(c,qty){
   const st=statOf(c);
-  return `<button class="card ${c.ty==="Site"?"site":""}" data-s="${c.s}" style="--el:var(${elColor(c)})">
+  return `<div class="card ${c.ty==="Site"?"site":""}" role="button" tabindex="0" data-s="${c.s}" style="--el:var(${elColor(c)})">
     <div class="art"><img src="${imgOf(c)}" alt="" loading="lazy" onerror="this.parentNode.classList.add('missing')"></div>
     <div class="body">
       <div class="head">${c.c!=null?`<span class="cost">${c.c}</span>`:""}
         <div class="names"><div class="pt">${esc(c.p)}</div><div class="en">${esc(c.n)}</div></div>
         ${qty?`<span class="qty" title="cópias">×${qty}</span>`:""}</div>
       <div class="meta">${pips(c.th)}<span>${TYPE_PT[c.ty]}</span>${c.r?`<span>· ${RAR_PT[c.r]}</span>`:""}</div>
-      <p class="text ${c.t?"":"empty"}">${c.t?esc(c.t):"Sem efeito."}</p>
+      <p class="text ${c.t?"":"empty"}">${c.t?linkKw(c.t):"Sem efeito."}</p>
       ${st?`<div class="foot"><span></span><span class="power">${st}</span></div>`:""}
-    </div></button>`;
+    </div></div>`;
 }
 function render(reset){
   if(reset) state.shown=60;
@@ -396,12 +454,13 @@ document.getElementById("grid").addEventListener("click",e=>{
   document.getElementById("dinfo").innerHTML=`
     <div class="head">${c.c!=null?`<span class="cost">${c.c}</span>`:""}<div class="names"><div class="pt">${esc(c.p)}</div><div class="en">${esc(c.n)}</div></div></div>
     <div class="meta">${pips(c.th)}<span>${TYPE_PT[c.ty]}</span>${c.r?`<span>· ${RAR_PT[c.r]}</span>`:""}${st?`<span>· ${st}</span>`:""}</div>
-    <p class="text ${c.t?"":"empty"}">${c.t?esc(c.t):"Sem efeito."}</p>
+    <p class="text ${c.t?"":"empty"}">${c.t?linkKw(c.t):"Sem efeito."}</p>
     ${c.tl?`<p class="typeline">${esc(c.tl)}</p>`:""}
     <p class="where">Coleções: ${c.sets.map(s=>SET_PT[s]).join(", ")}${decks.length?`<br>Nos decks: ${decks.join(", ")}`:""}</p>
     ${c.e?`<details><summary>Texto original em inglês</summary><p class="text">${esc(c.e)}</p></details>`:""}`;
   dlg.showModal();
 });
+document.getElementById("grid").addEventListener("keydown",e=>{if((e.key==="Enter"||e.key===" ")&&e.target.classList.contains("card")){e.preventDefault();e.target.click()}});
 document.getElementById("dlgclose").onclick=()=>dlg.close();
 dlg.addEventListener("click",e=>{if(e.target===dlg)dlg.close()});
 
@@ -416,7 +475,40 @@ function show(v){
   if(v==="mesa")drawBoard();
 }
 document.querySelector("nav.tabs").addEventListener("click",e=>{const b=e.target.closest("[data-view]");if(b)show(b.dataset.view)});
-document.querySelector("#gloss tbody").innerHTML=GLOSS.map(r=>`<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td><td>${esc(r[2])}</td></tr>`).join("");
+document.querySelector("#gloss tbody").innerHTML=GLOSS.slice().sort((a,b)=>a.pt.localeCompare(b.pt,"pt")).map(g=>`<tr id="g-${g.id}"><td class="gpt">${esc(g.pt)}</td><td class="gen">${esc(g.en)}</td><td>${esc(g.d)}</td></tr>`).join("");
+/* keyword links in card text */
+const KW_ORDER=GLOSS.filter(g=>g.re).map((g,i)=>[g,i]).sort((a,b)=>(/ /.test(b[0].re)-/ /.test(a[0].re))||a[1]-b[1]).map(x=>x[0]);
+const KW_RE=new RegExp("(?<![\\p{L}\\p{N}])(?:"+KW_ORDER.map(g=>"("+g.re.replace(/\((?!\?)/g,"(?:")+")").join("|")+")(?![\\p{L}\\p{N}])","giu");
+function linkKw(text){
+  return esc(text).replace(KW_RE,(m,...groups)=>{
+    const k=groups.findIndex((x,i)=>i<KW_ORDER.length&&x!==undefined); const g=KW_ORDER[k];
+    if(!g) return m;
+    if(g.cs&&m[0]!==m[0].toUpperCase()) return m;
+    return `<span class="kw" data-g="${g.id}">${m}</span>`;
+  });
+}
+const tip=document.getElementById("tip");
+function hideTip(){tip.hidden=true}
+document.addEventListener("pointerover",e=>{
+  const k=e.target.closest&&e.target.closest(".kw");
+  if(!k||e.pointerType!=="mouse"){if(!k)hideTip();return}
+  const g=GLOSS.find(x=>x.id===k.dataset.g); if(!g)return;
+  tip.innerHTML=`<strong>${esc(g.pt.replace(/\n/g," · "))}</strong>${esc(g.d)}<span class="tiphint">Clique para ver no glossário</span>`;
+  tip.hidden=false;
+  const r=k.getBoundingClientRect(), tw=tip.offsetWidth, th=tip.offsetHeight;
+  let x=Math.min(Math.max(8,r.left),window.innerWidth-tw-8), y=r.bottom+6;
+  if(y+th>window.innerHeight-8) y=r.top-th-6;
+  tip.style.left=x+"px"; tip.style.top=y+"px";
+});
+document.addEventListener("scroll",hideTip,true);
+document.addEventListener("click",e=>{
+  const k=e.target.closest&&e.target.closest(".kw"); if(!k)return;
+  e.stopPropagation(); e.preventDefault(); hideTip();
+  if(dlg.open) dlg.close();
+  show("glossario");
+  const row=document.getElementById("g-"+k.dataset.g);
+  if(row){row.scrollIntoView({block:"center"});row.classList.remove("flash");void row.offsetWidth;row.classList.add("flash")}
+},true);
 
 /* table counters */
 const PCOL=["--fire","--water","--earth","--air"];
