@@ -143,10 +143,51 @@ dialog::backdrop{background:rgba(10,12,14,.55)}
 .kw:hover,.kw.on{color:var(--gold)}
 #tip{position:fixed;z-index:4000;max-width:min(280px,calc(100vw - 16px));background:var(--ink);color:var(--bg);border-radius:8px;padding:8px 10px;font-size:.88rem;line-height:1.35;box-shadow:0 6px 20px rgba(0,0,0,.3);pointer-events:none}
 #tip strong{display:block;margin-bottom:2px}
+.sm{display:none}
+.thbtn{display:none;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:3px 6px;gap:6px}
+.thbtn span{font-family:var(--f-mono);font-size:.82rem}
+.thbtn b{color:var(--c);font-family:var(--f-body);font-size:.72rem;margin-right:1px}
+.who{display:flex;align-items:center;gap:6px;min-width:0}
+.pile.hit{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold)}
+.ctr{display:grid;grid-template-columns:5.5em 52px 1fr 52px;align-items:center;gap:10px}
+.ctrl{font-weight:600}
+.ctrv{font-family:var(--f-mono);font-size:1.6rem;font-weight:600;text-align:center}
+.btn.big{height:48px;font-size:1.3rem;padding:0}
+#board.compact .zone{display:none}
+#board.compact .matbg{background-size:131.08% 106.48%;background-position:49.05% 50.77%}
 .cover{position:fixed;inset:0;z-index:2000;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:24px}
 .cover h2{font-family:var(--f-display);font-weight:400;font-size:2rem;margin:0}
 .cover p{color:var(--muted);margin:0;max-width:40ch}
-@media (max-width:640px){.zoom{grid-template-columns:1fr}.piles{margin-left:0}.pname{max-width:7em}#board{width:100%;max-width:100%}.zone .zl{font-size:.5rem;padding:0 4px}}
+@media (max-width:699px){
+  body{font-size:14px}
+  .lg{display:none}.sm{display:inline}
+  .topbar{gap:5px;padding-block:4px;flex-wrap:nowrap}
+  .topbar .turn{font-size:.95rem}
+  .topbar .btn.small{padding:5px 8px;font-size:.85rem}
+  .strip{gap:4px 6px;padding:4px 6px;margin-block:3px;border-left-width:4px}
+  .strip .els{display:none}.thbtn{display:inline-flex}
+  .pname{max-width:6.5em;font-size:.95rem}
+  .avchip{font-size:.72rem;padding:1px 7px;max-width:8.5em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .life .v{font-size:1.15rem}
+  .st{width:30px;height:30px}
+  .piles{margin-left:0;flex-basis:100%;gap:4px}
+  .pile{padding:3px 7px;font-size:.78rem;min-height:30px}
+  .handbar{padding:4px;margin-block:3px 4px}
+  .handlab{font-size:.68rem;margin-bottom:3px}
+  #hand{min-height:80px;gap:5px}
+  .hc{width:56px}.hc.site{width:78px}
+  #actions .wrap{flex-wrap:nowrap;overflow-x:auto;gap:5px;padding-block:6px;-webkit-overflow-scrolling:touch}
+  #actions .what{position:sticky;left:0;flex:none;flex-basis:auto;background:var(--surface);padding-right:4px;max-width:9em;font-size:.82rem;line-height:1.15}
+  #actions .what small{display:block}
+  #actions .btn.small{flex:none;padding:8px 10px}
+  dialog{width:calc(100vw - 12px);max-height:calc(100dvh - 16px)}
+  .sheet{padding:12px;gap:10px}
+  .thumbs{grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:6px}
+  .zoom{grid-template-columns:1fr}
+  .zoom img{max-height:46dvh;width:auto;max-width:100%;margin:0 auto}
+  .sheet .row .btn{flex:1 1 auto}
+  .seats{grid-template-columns:1fr}
+}
 </style>
 </head>
 <body>
@@ -181,12 +222,12 @@ dialog::backdrop{background:rgba(10,12,14,.55)}
 
 <section id="game" hidden>
   <div class="wrap topbar">
-    <a href="index.html" aria-label="Voltar ao Grimório">← Grimório</a>
+    <a href="index.html" aria-label="Voltar ao Grimório">←<span class="lg"> Grimório</span></a>
     <span class="turn" id="turnlab"></span>
-    <button class="btn ghost small" id="undobtn" type="button">Desfazer</button>
+    <button class="btn ghost small" id="undobtn" type="button" aria-label="Desfazer">↶<span class="lg"> Desfazer</span></button>
     <button class="btn ghost small" id="tokbtn" type="button">Fichas</button>
     <button class="btn ghost small" id="menubtn" type="button">Mais</button>
-    <button class="btn small" id="passbtn" type="button">Passar a vez</button>
+    <button class="btn small" id="passbtn" type="button">Passar<span class="lg"> a vez</span></button>
   </div>
   <div class="wrap" id="strip1"></div>
   <div class="wrap boardwrap"><div id="board" aria-label="Reino"></div></div>
@@ -279,6 +320,8 @@ const GLOSS = [
 const KW_ORDER=GLOSS.filter(g=>g.re).map((g,i)=>[g,i]).sort((a,b)=>(/ /.test(b[0].re)-/ /.test(a[0].re))||a[1]-b[1]).map(x=>x[0]);
 const KW_RE=new RegExp("(?<![\\p{L}\\p{N}])(?:"+KW_ORDER.map(g=>"("+g.re.replace(/\((?!\?)/g,"(?:")+")").join("|")+")(?![\\p{L}\\p{N}])","giu");
 function linkKw(text){return esc(text).replace(KW_RE,(m,...groups)=>{const k=groups.findIndex((x,i)=>i<KW_ORDER.length&&x!==undefined);const g=KW_ORDER[k];if(!g)return m;if(g.cs&&m[0]!==m[0].toUpperCase())return m;return `<span class="kw" data-g="${g.id}" tabindex="0">${m}</span>`})}
+/* cards each Gothic precon keeps outside the deck (official lists) */
+const COLL={"gothic-persecutor":{"Hellhounds":3},"gothic-necromancer":{"Ghoul":2},"gothic-harbinger":{"Horrible Hybrids":1,"Shoggoth":2},"gothic-savior":{"Eltham Townsfolk":1,"Serava Townsfolk":1,"Penitent Knight":1}};
 const TOK={foot_soldier:["Soldado","#8c6d3f","#fff"],skeleton:["Esqueleto","#e6e1d3","#2a2620"],frog:["Sapo","#4f8a3a","#fff"],lance:["Lança","#8a8f99","#fff"],rubble:["Escombros","#6b6660","#fff"]};
 const TOKENS=[["foot_soldier","Soldado"],["skeleton","Esqueleto"],["frog","Sapo"],["lance","Lança"],["rubble","Escombros"]];
 const ELV=["--air","--earth","--fire","--water"], ELL=["A","T","F","Á"];
@@ -322,7 +365,7 @@ function newGame(){
   const f=$("first").value; const first=f==="r"?(Math.random()<.5?0:1):+f;
   S={v:1,turn:first,round:1,next:1,mat:$("mat").value,cards:{},board:[],players:[]};
   decks.forEach((dk,p)=>{
-    const pl={name:names[p],deck:dk,life:20,th:[0,0,0,0],hand:[],atlas:[],book:[],grave:[],banish:[]};
+    const pl={name:names[p],deck:dk,life:20,th:[0,0,0,0],hand:[],atlas:[],book:[],grave:[],banish:[],coll:[]};
     S.players.push(pl);
     for(const[n,q] of Object.entries(DECKS[dk])){
       const ci=BYNAME[n]; if(!ci)continue;
@@ -333,6 +376,8 @@ function newGame(){
         else{S.cards[id].zone="book";pl.book.push(id)}
       }
     }
+    for(const[n,q] of Object.entries(COLL[dk]||{})){const ci=BYNAME[n];if(!ci)continue;
+      for(let k=0;k<q;k++){const id="c"+(S.next++);S.cards[id]={slug:ci.s,owner:p,zone:"coll",tapped:false,down:false,dmg:0,coll:true};pl.coll.push(id)}}
     shuffle(pl.atlas);shuffle(pl.book);
     for(let k=0;k<3;k++){draw(p,"atlas",true);draw(p,"book",true)}
   });
@@ -353,8 +398,10 @@ function startGame(coverFirst){
 const G={l:104/894,t:18/583,w:682/894,h:547.5/583};          /* grid rectangle as fractions of the mat */
 const XMIN=-G.l/G.w*5, XMAX=5+(1-G.l-G.w)/G.w*5, YMIN=-G.t/G.h*4, YMAX=4+(1-G.t-G.h)/G.h*4;
 let FLIP=false;                                              /* the table is seen from the other side */
-const VL=()=>FLIP?1-G.l-G.w:G.l, VT=()=>FLIP?1-G.t-G.h:G.t;
-const pctX=x=>(VL()+(FLIP?5-x:x)/5*G.w)*100, pctY=y=>(VT()+(FLIP?4-y:y)/4*G.h)*100;
+let COMPACT=false;                                           /* phones: the mat is cropped to the realm and the piles live in the strips */
+const GM=()=>COMPACT?{l:0,t:0,w:1,h:1}:G;
+const VL=()=>COMPACT?0:(FLIP?1-G.l-G.w:G.l), VT=()=>COMPACT?0:(FLIP?1-G.t-G.h:G.t);
+const pctX=x=>(VL()+(FLIP?5-x:x)/5*GM().w)*100, pctY=y=>(VT()+(FLIP?4-y:y)/4*GM().h)*100;
 const MX=(XMIN/2), MX2=(5+XMAX)/2;                          /* centers of the left and right margins */
 function zonesOf(p){ /* each player keeps decks on the left margin and discards on the right, in their own half */
   /* seen from each player's own seat: decks on their left, discards on their right (so the opponent's are mirrored) */
@@ -373,29 +420,33 @@ function snap(c,pos,ignore){
 
 /* ---------- rendering ---------- */
 function fitBoard(){ /* the mat takes the height left by the bars and the hand, never more than the width */
-  const B=$("board"), wrap=B.parentNode;
-  const used=["topbar","strip1","strip0","handbar"].reduce((s,id)=>{const el=id==="topbar"?document.querySelector(".topbar"):$(id);return s+(el?el.offsetHeight:0)},0)+40;
-  const avail=Math.max(200,window.innerHeight-used);
+  COMPACT=window.innerWidth<700;
+  const B=$("board"), wrap=B.parentNode, ar=COMPACT?1.25:894/583;
+  B.style.aspectRatio=COMPACT?"5/4":"894/583";
+  const used=["topbar","strip1","strip0","handbar"].reduce((s,id)=>{const el=id==="topbar"?document.querySelector(".topbar"):$(id);return s+(el?el.offsetHeight:0)},0)+(COMPACT?24:40);
+  const avail=Math.max(180,window.innerHeight-used);
   const maxW=wrap.clientWidth-(parseFloat(getComputedStyle(wrap).paddingLeft)||0)-(parseFloat(getComputedStyle(wrap).paddingRight)||0);
-  B.style.width=Math.max(Math.min(280,maxW),Math.min(maxW,avail*894/583))+"px";
+  B.style.width=Math.max(Math.min(260,maxW),Math.min(maxW,avail*ar))+"px";
 }
+
 function imgTag(c){
   const i=info(c);
   return `<img src="img/${c.slug}.webp" alt="" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'fallback',textContent:${JSON.stringify(i?i.p:"Carta")}}))">`;
 }
 function stripHTML(p){
   const pl=S.players[p];
+  const av=Object.keys(S.cards).find(id=>S.cards[id].owner===p&&info(S.cards[id])&&info(S.cards[id]).ty==="Avatar");
+  const pile=(z,lg,sm)=>`<button class="pile" data-pile="${z}" data-z="${z}" type="button"><span class="lg">${lg}</span><span class="sm">${sm}</span> <span class="n">${pl[z].length}</span></button>`;
   return `<div class="strip ${S.turn===p?"active":""}" style="--pc:var(--p${p})" data-p="${p}">
-    <span class="pname" title="${esc(DECK_PT[pl.deck])}">${esc(pl.name)}</span>
-    ${(()=>{const av=Object.keys(S.cards).find(id=>S.cards[id].owner===p&&info(S.cards[id])&&info(S.cards[id]).ty==="Avatar");return av?`<button class="avchip" data-zoom="${av}" type="button" title="Ver o Avatar">${esc(info(S.cards[av]).p)}</button>`:""})()}
+    <span class="who"><span class="pname" title="${esc(DECK_PT[pl.deck])}">${esc(pl.name)}</span>
+    ${av?`<button class="avchip" data-zoom="${av}" type="button" title="Ver o Avatar">${esc(info(S.cards[av]).p)}</button>`:""}</span>
     <span class="life ${pl.life<=0?"door":""}" title="${pl.life<=0?"Às portas da morte":"Vida"}"><button class="st" data-life="-1" aria-label="Menos 1 de vida">−</button><span class="v">${pl.life}</span><button class="st" data-life="1" aria-label="Mais 1 de vida">+</button></span>
     <span class="els">${pl.th.map((v,k)=>`<span class="el" style="--c:var(${ELV[k]})"><b>${ELL[k]}</b><button data-th="${k}" data-d="-1" aria-label="Menos">−</button><span>${v}</span><button data-th="${k}" data-d="1" aria-label="Mais">+</button></span>`).join("")}</span>
+    <button class="thbtn" data-counters="1" type="button" aria-label="Ajustar limiar">${pl.th.map((v,k)=>`<span style="--c:var(${ELV[k]})"><b>${ELL[k]}</b>${v}</span>`).join("")}</button>
     <span class="piles">
-      <button class="pile" data-pile="atlas">Atlas <span class="n">${pl.atlas.length}</span></button>
-      <button class="pile" data-pile="book">Grimório <span class="n">${pl.book.length}</span></button>
-      <button class="pile" data-pile="grave">Cemitério <span class="n">${pl.grave.length}</span></button>
-      ${pl.banish.length?`<button class="pile" data-pile="banish">Banidas <span class="n">${pl.banish.length}</span></button>`:""}
-      <span class="pile" title="Cartas na mão">Mão <span class="n">${pl.hand.length}</span></span>
+      ${pile("atlas","Atlas","Atl.")}${pile("book","Grimório","Grim.")}${pile("grave","Cemitério","Cem.")}
+      ${pl.banish.length?pile("banish","Banidas","Ban."):""}${pl.coll.length?pile("coll","Coleção","Col."):""}
+      <span class="pile" title="Cartas na mão"><span class="lg">Mão</span><span class="sm">Mão</span> <span class="n">${pl.hand.length}</span></span>
     </span></div>`;
 }
 function render(){
@@ -405,12 +456,12 @@ function render(){
   $("strip0").innerHTML=stripHTML(bottom); $("strip1").innerHTML=stripHTML(1-bottom);
   /* board */
   fitBoard();
-  const B=$("board"); B.className="mat-"+(S.mat||"1")+(FLIP?" flip":""); const W=B.clientWidth||600; const cell=W*G.w/5;
-  const zones=[0,1].flatMap(p=>zonesOf(p).map(zz=>{
+  const B=$("board"); B.className="mat-"+(S.mat||"1")+(FLIP?" flip":"")+(COMPACT?" compact":""); const W=B.clientWidth||600; const cell=W*GM().w/5;
+  const zones=COMPACT?[]:[0,1].flatMap(p=>zonesOf(p).map(zz=>{
     const l=S.players[p][zz.z], top=l[0]&&cardOf(l[0]), w=cell*.6;
     const face=(zz.z==="grave"||zz.z==="banish")&&top?imgTag(top):(l.length?`<div class="back ${zz.z==="atlas"?"atlas":"book"}"></div>`:"");
     return `<div class="zone" data-p="${p}" data-z="${zz.z}" style="left:${pctX(zz.x)}%;top:${pctY(zz.y)}%;width:${w}px;aspect-ratio:63/88;--pc:var(--p${p})">${face}${l.length?`<span class="zn">${l.length}</span>`:""}<span class="zl">${zz.lab}</span></div>`}));
-  B.innerHTML=`<div class="matbg"></div><div class="gridov" style="left:${VL()*100}%;top:${VT()*100}%;width:${G.w*100}%;height:${G.h*100}%"></div>`+zones.join("")+S.board.map((b,i)=>{
+  B.innerHTML=`<div class="matbg"></div><div class="gridov" style="left:${VL()*100}%;top:${VT()*100}%;width:${GM().w*100}%;height:${GM().h*100}%"></div>`+zones.join("")+S.board.map((b,i)=>{
     const c=cardOf(b.id); const site=isSite(c); const tk=c.token&&TOK[c.slug];
     const pos=`left:${pctX(b.x)}%;top:${pctY(b.y)}%;--pc:var(--p${c.owner})`;
     const w=tk?(site?cell*.6:cell*.42):(site?cell*.94:cell*.56);   /* tokens are small cards */
@@ -433,7 +484,7 @@ function renderActions(){
   const bar=$("actions");
   if(!sel||!S.cards[sel]){bar.hidden=true;document.body.style.paddingBottom="";return}
   const c=cardOf(sel), i=info(c), z=c.zone, dz=deckZoneOf(c);
-  const ZN={board:"no reino",hand:"na mão",atlas:"no Atlas",book:"no Grimório",grave:"no cemitério",banish:"banida"};
+  const ZN={board:"no reino",hand:"na mão",atlas:"no Atlas",book:"no Grimório",grave:"no cemitério",banish:"banida",coll:"na coleção"};
   const A=[act("Ampliar",()=>zoom(sel),"ghost")];
   if(z==="board"){
     A.push(act(c.tapped?"Desvirar":"Virar",()=>mut(()=>{c.tapped=!c.tapped})));
@@ -444,6 +495,7 @@ function renderActions(){
   else{
     if(z!=="hand")A.push(act("Para a mão",()=>mut(()=>moveTo(sel,"hand",{bottom:true})),"ghost"));
     if(z!=="grave")A.push(act("Cemitério",()=>mut(()=>moveTo(sel,"grave")),"ghost"));
+    if(c.coll&&z!=="coll")A.push(act("Voltar à coleção",()=>mut(()=>moveTo(sel,"coll")),"ghost"));
     A.push(act(dz==="atlas"?"Topo do Atlas":"Topo do Grimório",()=>mut(()=>moveTo(sel,dz)),"ghost"));
     A.push(act(dz==="atlas"?"Fundo do Atlas":"Fundo do Grimório",()=>mut(()=>moveTo(sel,dz,{bottom:true})),"ghost"));
     if(z!=="banish")A.push(act("Banir",()=>mut(()=>moveTo(sel,"banish")),"ghost"));
@@ -460,10 +512,11 @@ function mut(fn){snapshot();fn();if(sel&&!S.cards[sel])sel=null;commit()}
 function stripClick(e){
   const st=e.target.closest(".strip"); if(!st)return; const p=+st.dataset.p, pl=S.players[p];
   const zb=e.target.closest("[data-zoom]"); if(zb){zoom(zb.dataset.zoom);return}
+  if(e.target.closest("[data-counters]")){openCounters(p);return}
   const lb=e.target.closest("[data-life]"), tb=e.target.closest("[data-th]"), pb=e.target.closest("[data-pile]");
   if(lb) mut(()=>{pl.life=Math.max(0,pl.life+ +lb.dataset.life)});
   if(tb) mut(()=>{const k=+tb.dataset.th;pl.th[k]=Math.max(0,pl.th[k]+ +tb.dataset.d)});
-  if(pb) openPile(p,pb.dataset.pile);
+  if(pb){ if(sel&&S.cards[sel]&&(placing||lastPtr!=="mouse")&&cardOf(sel).owner===p&&cardOf(sel).zone!==pb.dataset.pile){placing=false;dropOnZone(sel,pb)} else openPile(p,pb.dataset.pile) }
 }
 $("strip0").addEventListener("click",stripClick); $("strip1").addEventListener("click",stripClick);
 
@@ -474,7 +527,7 @@ sheet.addEventListener("click",e=>{if(e.target===sheet)sheet.close()});
 function thumbs(ids,numbered,picked){return `<div class="thumbs">${ids.map((id,k)=>{const c=cardOf(id);return `<button class="thumb ${picked===id?"picked":""}" data-pick="${id}" type="button">${imgTag(c)}${numbered?`<span class="pos">${k+1}</span>`:""}</button>`}).join("")||`<span class="empty">Vazio.</span>`}</div>`}
 function openPile(p,z,peek,pick,msg){
   const pl=S.players[p];
-  const T={atlas:"Atlas",book:"Grimório",grave:"Cemitério",banish:"Banidas"}[z];
+  const T={atlas:"Atlas",book:"Grimório",grave:"Cemitério",banish:"Banidas",coll:"Coleção"}[z];
   const l=pl[z];
   if(z==="atlas"||z==="book"){
     openSheet(`<h2>${T} de ${esc(pl.name)} · ${l.length}</h2>
@@ -506,6 +559,7 @@ $("sheetbody").addEventListener("click",e=>{
   if(!b)return;
   const a=b.dataset.sh;
   if(a==="close")sheet.close();
+  if(a==="ctr"){const pl=S.players[ctx.p],k=b.dataset.k,dd=+b.dataset.d;mut(()=>{if(k==="life")pl.life=Math.max(0,pl.life+dd);else pl.th[+k]=Math.max(0,pl.th[+k]+dd)});openCounters(ctx.p);return}
   if(a==="unpick")openPile(ctx.p,ctx.z,ctx.peek);
   if(a==="take"&&ctx.pick){const nm=info(cardOf(ctx.pick))?info(cardOf(ctx.pick)).p:"A carta";mut(()=>moveTo(ctx.pick,"hand",{bottom:true}));openPile(ctx.p,ctx.z,ctx.peek,null,`${nm} foi para a mão de ${S.players[ctx.p].name}. Se a carta pedir, embaralhe o monte.`)}
   if(a==="takeboard"&&ctx.pick){sel=ctx.pick;placing=true;sheet.close();render()}
@@ -547,6 +601,14 @@ function openTokens(q){
   if(q)inp.focus();
 }
 $("tokbtn").addEventListener("click",()=>openTokens(""));
+function openCounters(p){ /* big steppers for phones */
+  const pl=S.players[p];
+  openSheet(`<h2>${esc(pl.name)}</h2>
+    <div class="ctr"><span class="ctrl">Vida</span><button class="btn ghost big" data-sh="ctr" data-k="life" data-d="-1" type="button">−</button><span class="ctrv">${pl.life}</span><button class="btn ghost big" data-sh="ctr" data-k="life" data-d="1" type="button">+</button></div>
+    ${pl.th.map((v,k)=>`<div class="ctr" style="--c:var(${ELV[k]})"><span class="ctrl" style="color:var(--c)">${["Ar","Terra","Fogo","Água"][k]}</span><button class="btn ghost big" data-sh="ctr" data-k="${k}" data-d="-1" type="button">−</button><span class="ctrv">${v}</span><button class="btn ghost big" data-sh="ctr" data-k="${k}" data-d="1" type="button">+</button></div>`).join("")}
+    <div class="row"><button class="btn" data-sh="close" type="button">Pronto</button></div>`);
+  sheet._ctx={p};
+}
 function zoom(id){
   const c=cardOf(id), i=info(c);
   openSheet(`<div class="zoom"><div>${imgTag(c)}</div><div><div class="pt">${esc(i?i.p:"Carta")}</div><div class="en">${esc(i?i.n:"")}</div><p class="text">${i&&i.t?linkKw(i.t):"Sem efeito."}</p>${i&&i.e?`<details><summary>Texto em inglês</summary><p class="text">${esc(i.e)}</p></details>`:""}</div></div><div class="row"><button class="btn ghost" data-sh="close" type="button">Fechar</button></div>`);
@@ -578,14 +640,15 @@ $("coverbtn").addEventListener("click",()=>{$("cover").hidden=true;handHidden=fa
 $("showhand").addEventListener("click",()=>{handHidden=false;render()});
 $("undobtn").addEventListener("click",()=>{if(!undoStack.length)return;S=JSON.parse(undoStack.pop());if(sel&&!S.cards[sel])sel=null;placing=false;commit()});
 
+let lastPtr="mouse"; document.addEventListener("pointerdown",e=>{lastPtr=e.pointerType||"mouse"},true);
 /* ---------- pointer: board ---------- */
 function boardPos(ev){const r=$("board").getBoundingClientRect();
   const fx=(ev.clientX-r.left)/r.width, fy=(ev.clientY-r.top)/r.height;
-  let x=(fx-VL())/G.w*5, y=(fy-VT())/G.h*4; if(FLIP){x=5-x;y=4-y}
+  let x=(fx-VL())/GM().w*5, y=(fy-VT())/GM().h*4; if(FLIP){x=5-x;y=4-y}
   return {x:Math.min(6,Math.max(-1,x)),y:Math.min(5,Math.max(-1,y)),inside:fx>=0&&fx<=1&&fy>=0&&fy<=1}}
-function zoneAt(ev){for(const el of document.querySelectorAll("#board .zone")){const r=el.getBoundingClientRect();if(ev.clientX>=r.left&&ev.clientX<=r.right&&ev.clientY>=r.top&&ev.clientY<=r.bottom)return el}return null}
+function zoneAt(ev){for(const el of document.querySelectorAll("#board .zone,.strip .pile[data-z]")){const r=el.getBoundingClientRect();if(ev.clientX>=r.left&&ev.clientX<=r.right&&ev.clientY>=r.top&&ev.clientY<=r.bottom)return el}return null}
 function dropOnZone(id,zel){ /* a card always goes to its owner's pile of that kind */
-  const c=cardOf(id); let z=zel.dataset.z; if(z==="atlas"||z==="book")z=deckZoneOf(c);
+  const c=cardOf(id); let z=zel.dataset.z; if(z==="coll"&&!c.coll)return render(); if(z==="atlas"||z==="book")z=deckZoneOf(c);
   mut(()=>moveTo(id,z)); if(!S.cards[id]||cardOf(id).zone!=="board")sel=null; render();
 }
 function placeAt(id,pos){
@@ -595,14 +658,14 @@ function placeAt(id,pos){
 let hiEl=null;
 function highlight(ev,c){ /* show where a dragged card will land */
   const B=$("board"); if(!hiEl){hiEl=document.createElement("div");hiEl.className="cellhi"}
-  document.querySelectorAll("#board .zone.hit").forEach(z=>z.classList.remove("hit"));
+  document.querySelectorAll(".zone.hit,.pile.hit").forEach(z=>z.classList.remove("hit"));
   const z=zoneAt(ev); if(z){z.classList.add("hit");hiEl.remove();return}
   const p=boardPos(ev); if(!p.inside||!inGrid(p)){hiEl.remove();return}
-  const cw=B.clientWidth*G.w/5;
+  const cw=B.clientWidth*GM().w/5;
   hiEl.style.cssText=`left:${pctX(Math.floor(p.x)+.5)}%;top:${pctY(Math.floor(p.y)+.5)}%;width:${cw*.96}px;height:${cw*.96}px`;
   if(hiEl.parentNode!==B)B.appendChild(hiEl);
 }
-function clearHi(){if(hiEl)hiEl.remove();document.querySelectorAll("#board .zone.hit").forEach(z=>z.classList.remove("hit"))}
+function clearHi(){if(hiEl)hiEl.remove();document.querySelectorAll(".zone.hit,.pile.hit").forEach(z=>z.classList.remove("hit"))}
 let drag=null;
 $("board").addEventListener("pointerdown",e=>{
   const zel=e.target.closest(".zone"), el=e.target.closest(".bc");
@@ -670,7 +733,7 @@ Promise.all([fetch("data/cards.json").then(r=>r.json()),fetch("data/decks.json")
   if(saved&&saved.v===1){$("resume").hidden=false;$("resumeinfo").textContent=`${saved.players[0].name} contra ${saved.players[1].name}, rodada ${saved.round}`}
 }).catch(()=>{$("startbtn").textContent="Não consegui carregar as cartas"});
 $("startbtn").addEventListener("click",newGame);
-$("resumebtn").addEventListener("click",()=>{S=store.get("jogo",null);if(S)startGame(true)});
+$("resumebtn").addEventListener("click",()=>{S=store.get("jogo",null);if(S){S.players.forEach(p=>{p.coll=p.coll||[]});startGame(true)}});
 if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(()=>{})}
 </script>
 </body>
